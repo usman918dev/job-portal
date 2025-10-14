@@ -14,6 +14,7 @@ import AdminManageJobs from "./pages/admin/ManageJobs";
 import AdminManageUsers from "./pages/admin/ManageUsers";
 import AdminProfile from "./pages/admin/AdminProfile";
 import SeedData from "./pages/admin/SeedData";
+import AuditLogs from "./pages/admin/AuditLogs";
 import "quill/dist/quill.snow.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -153,6 +154,7 @@ const App = () => {
           <Route index element={<AdminDashboard />} />
           <Route path="jobs" element={<AdminManageJobs />} />
           <Route path="seed" element={<SeedData />} />
+          <Route path="audit-logs" element={<AuditLogs />} />
           <Route path="users" element={<AdminManageUsers />} />
           <Route path="profile" element={<AdminProfile />} />
         </Route>

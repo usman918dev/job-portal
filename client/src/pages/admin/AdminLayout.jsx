@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { FiHome, FiBriefcase, FiUser, FiLogOut, FiSun, FiMoon, FiDatabase } from 'react-icons/fi';
+import { FiHome, FiBriefcase, FiUser, FiLogOut, FiSun, FiMoon, FiDatabase, FiActivity } from 'react-icons/fi';
 import { ThemeProvider, useTheme } from '../../context/ThemeContext';
 import { getCurrentUser, logout } from '../../services/authService';
 
@@ -64,6 +64,7 @@ const AdminLayoutContent = () => {
     { path: '/admin', icon: FiHome, label: 'Dashboard', exact: true },
     { path: '/admin/jobs', icon: FiBriefcase, label: 'Jobs' },
     { path: '/admin/seed', icon: FiDatabase, label: 'Seed Data' },
+    { path: '/admin/audit-logs', icon: FiActivity, label: 'Audit Logs' },
     { path: '/admin/profile', icon: FiUser, label: 'Profile' },
   ];
 
