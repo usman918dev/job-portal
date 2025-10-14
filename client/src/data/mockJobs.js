@@ -1,0 +1,122 @@
+export const jobs = [
+  {
+    id: 1,
+    title: "Senior React Developer",
+    company: "TechCorp Solutions",
+    location: "New York, USA",
+    salary: "$120,000 - $150,000",
+    type: "Full-time",
+    postedDate: "2024-03-10",
+    description: "Looking for an experienced React developer to lead our frontend team.",
+    requirements: "5+ years React, TypeScript, Redux experience",
+    logo: "https://random.imagecdn.app/100/100"
+  },
+  {
+    id: 2,
+    title: "Backend Node.js Engineer",
+    company: "DataFlow Systems",
+    location: "Remote",
+    salary: "$90,000 - $120,000",
+    type: "Full-time",
+    postedDate: "2024-03-09",
+    description: "Backend developer needed for scaling our Node.js services.",
+    requirements: "3+ years Node.js, MongoDB experience",
+    logo: "https://random.imagecdn.app/100/100"
+  },
+  {
+    id: 3,
+    title: "UI/UX Designer",
+    company: "Creative Minds Inc",
+    location: "San Francisco, USA",
+    salary: "$85,000 - $110,000",
+    type: "Full-time",
+    postedDate: "2024-03-08",
+    description: "Creative designer needed for our product team.",
+    requirements: "Figma, Adobe XD, 3+ years experience",
+    logo: "https://random.imagecdn.app/100/100"
+  },
+  {
+    id: 4,
+    title: "DevOps Engineer",
+    company: "Cloud Systems Ltd",
+    location: "London, UK",
+    salary: "£65,000 - £85,000",
+    type: "Full-time",
+    postedDate: "2024-03-07",
+    description: "Looking for DevOps engineer with AWS expertise.",
+    requirements: "AWS, Docker, Kubernetes experience",
+    logo: "https://random.imagecdn.app/100/100"
+  },
+  {
+    id: 5,
+    title: "Mobile App Developer",
+    company: "AppTech Mobile",
+    location: "Berlin, Germany",
+    salary: "€55,000 - €70,000",
+    type: "Full-time",
+    postedDate: "2024-03-06",
+    description: "React Native developer for our mobile team.",
+    requirements: "React Native, iOS/Android experience",
+    logo: "https://random.imagecdn.app/100/100"
+  },
+  {
+    id: 6,
+    title: "Data Scientist",
+    company: "AI Solutions Co",
+    location: "Toronto, Canada",
+    salary: "$95,000 - $125,000",
+    type: "Full-time",
+    postedDate: "2024-03-05",
+    description: "Data scientist needed for ML projects.",
+    requirements: "Python, TensorFlow, ML experience",
+    logo: "https://random.imagecdn.app/100/100"
+  },
+  {
+    id: 7,
+    title: "Frontend Developer",
+    company: "WebTech Solutions",
+    location: "Remote",
+    salary: "$70,000 - $90,000",
+    type: "Contract",
+    postedDate: "2024-03-04",
+    description: "Frontend developer for our web applications.",
+    requirements: "React, Vue.js experience",
+    logo: "https://random.imagecdn.app/100/100"
+  },
+  {
+    id: 8,
+    title: "Java Backend Developer",
+    company: "Enterprise Systems",
+    location: "Singapore",
+    salary: "$80,000 - $100,000",
+    type: "Full-time",
+    postedDate: "2024-03-03",
+    description: "Java developer for our backend services.",
+    requirements: "Java, Spring Boot, MySQL",
+    logo: "https://random.imagecdn.app/100/100"
+  },
+  {
+    id: 9,
+    title: "Product Manager",
+    company: "Innovation Labs",
+    location: "Austin, USA",
+    salary: "$110,000 - $140,000",
+    type: "Full-time",
+    postedDate: "2024-03-02",
+    description: "Product manager for our tech products.",
+    requirements: "5+ years PM experience, tech background",
+    logo: "https://random.imagecdn.app/100/100"
+  },
+  {
+    id: 10,
+    title: "QA Engineer",
+    company: "Quality First Ltd",
+    location: "Melbourne, Australia",
+    salary: "AU$85,000 - AU$105,000",
+    type: "Full-time",
+    postedDate: "2024-03-01",
+    description: "QA engineer for automated testing.",
+    requirements: "Selenium, TestNG, CI/CD experience",
+    logo: "https://random.imagecdn.app/100/100"
+  }
+];
