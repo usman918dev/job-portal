@@ -10,6 +10,7 @@ import {
     getJobApplications
 } from '../controllers/jobApplicationController.js';
 import { verifyToken, isAdmin } from '../middleware/auth.js';
+import auditMiddleware from '../middleware/auditMiddleware.js';
 
 const router = express.Router();
 
@@ -166,9 +167,9 @@ router.get('/', verifyToken, isAdmin, getAllApplications);
 router.get('/job/:jobId', verifyToken, isAdmin, getJobApplications);
 
 // Accept application
-router.put('/accept/:id', verifyToken, isAdmin, acceptApplication);
+router.put('/accept/:id', verifyToken, isAdmin, auditMiddleware, acceptApplication);
 
 // Reject and delete application
-router.delete('/reject/:id', verifyToken, isAdmin, rejectApplication);
+router.delete('/reject/:id', verifyToken, isAdmin, auditMiddleware, rejectApplication);
 
 export default router;

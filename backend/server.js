@@ -10,6 +10,7 @@ import userRoutes from './routes/adminUserRoute.js';
 import jobApplicationRoutes from './routes/jobApplicationRoutes.js';
 import testEmailRoutes from './routes/testEmailRoute.js';
 import seedRoutes from './routes/seedRoutes.js';
+import auditLogRoutes from './routes/auditLogRoutes.js';
 dotenv.config();
 
 // Configure Cloudinary
@@ -34,7 +35,7 @@ app.get('/test', (req, res) => {
   res.json({ message: 'Server is working' });
 });
 
-// auth Routes
+// auth Routes (no audit logging for auth routes)
 app.use('/api/auth', authRoutes);
 
 // job Routes
@@ -45,6 +46,9 @@ app.use('/api/applications', jobApplicationRoutes);
 
 // users (admin) Routes
 app.use('/api/users', userRoutes);
+
+// audit log routes
+app.use('/api/audit', auditLogRoutes);
 
 // test email routes
 app.use('/api', testEmailRoutes);

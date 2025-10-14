@@ -1,6 +1,7 @@
 import express from 'express';
 import { seedJobs, clearJobs } from '../seeders/jobSeeder.js';
 import { verifyToken, isAdmin } from '../middleware/auth.js';
+import auditMiddleware from '../middleware/auditMiddleware.js';
 
 const router = express.Router();
 
@@ -9,7 +10,7 @@ const router = express.Router();
  * Seed fake jobs into database
  * Protected: Admin only
  */
-router.post('/jobs', verifyToken, isAdmin, async (req, res) => {
+router.post('/jobs', verifyToken, isAdmin, auditMiddleware, async (req, res) => {
   try {
     const { count = 5 } = req.body;
 
@@ -52,7 +53,7 @@ router.post('/jobs', verifyToken, isAdmin, async (req, res) => {
  * Protected: Admin only
  * Use with CAUTION!
  */
-router.delete('/jobs', verifyToken, isAdmin, async (req, res) => {
+router.delete('/jobs', verifyToken, isAdmin, auditMiddleware, async (req, res) => {
   try {
     const result = await clearJobs();
 
