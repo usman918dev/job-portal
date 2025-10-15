@@ -210,28 +210,150 @@ export const getUniqueActions = async () => {
  */
 export const deleteOldLogs = async (daysOld = 90) => {
   try {
-    const cutoffDate = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000);
-    
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
     const result = await AuditLog.deleteMany({
       createdAt: { $lt: cutoffDate }
     });
 
     return {
       success: true,
-      data: {
-        deletedCount: result.deletedCount,
-        message: `Deleted ${result.deletedCount} logs older than ${daysOld} days`
-      }
+      message: `Successfully deleted ${result.deletedCount} audit logs older than ${daysOld} days`,
+      deletedCount: result.deletedCount
     };
   } catch (error) {
-    console.error('Error deleting old logs:', error);
-    throw new Error('Failed to delete old logs');
+    console.error('Error deleting old audit logs:', error);
+    throw new Error('Failed to delete old audit logs');
   }
+};
+
+/**
+ * Create a new audit log entry
+ * @param {Object} auditData - Audit log data
+ * @param {ObjectId} auditData.admin - Admin user ID
+ * @param {String} auditData.action - Action performed
+ * @param {String} auditData.method - HTTP method
+ * @param {String} auditData.endpoint - API endpoint
+ * @param {String} auditData.ip - Client IP address
+ * @param {String} auditData.userAgent - User agent string
+ * @param {Object} auditData.requestBody - Sanitized request body
+ * @param {Number} auditData.statusCode - Response status code
+ * @param {String} auditData.errorMessage - Error message if any
+ * @returns {Object} - Created audit log
+ */
+export const createAuditLog = async (auditData) => {
+  try {
+    const auditLog = await AuditLog.create(auditData);
+    return auditLog;
+  } catch (error) {
+    console.error('Error creating audit log:', error);
+    throw new Error('Failed to create audit log');
+  }
+};
+
+/**
+ * Determine the action based on HTTP method and endpoint
+ * @param {String} method - HTTP method
+ * @param {String} path - Request path
+ * @returns {String|null} - Action description or null
+ */
+export const determineAuditAction = (method, path) => {
+  // Normalize path
+  const normalizedPath = path.toLowerCase();
+
+  // Job-related actions
+  if (normalizedPath.includes('/jobs')) {
+    if (method === 'POST' && !normalizedPath.includes('/seed')) {
+      return 'Create Job';
+    }
+    if (method === 'PUT' || method === 'PATCH') {
+      return 'Update Job';
+    }
+    if (method === 'DELETE') {
+      return 'Delete Job';
+    }
+  }
+
+  // Seed jobs
+  if (normalizedPath.includes('/seed/jobs')) {
+    if (method === 'POST') {
+      return 'Seed Jobs';
+    }
+    if (method === 'DELETE') {
+      return 'Clear Seeded Jobs';
+    }
+  }
+
+  // Application-related actions
+  if (normalizedPath.includes('/application')) {
+    if (normalizedPath.includes('/accept')) {
+      return 'Accept Application';
+    }
+    if (normalizedPath.includes('/reject')) {
+      return 'Reject Application';
+    }
+    if (method === 'PUT' || method === 'PATCH') {
+      return 'Update Application';
+    }
+    if (method === 'DELETE') {
+      return 'Delete Application';
+    }
+  }
+
+  // User management actions
+  if (normalizedPath.includes('/user')) {
+    if (method === 'POST') {
+      return 'Create User';
+    }
+    if (method === 'PUT' || method === 'PATCH') {
+      if (normalizedPath.includes('/suspend')) {
+        return 'Suspend User';
+      }
+      if (normalizedPath.includes('/activate')) {
+        return 'Activate User';
+      }
+      return 'Update User';
+    }
+    if (method === 'DELETE') {
+      return 'Delete User';
+    }
+  }
+
+  // Return null for GET requests and other non-action routes
+  return null;
+};
+
+/**
+ * Sanitize request body to remove sensitive information
+ * @param {Object} body - Request body
+ * @returns {Object} - Sanitized body
+ */
+export const sanitizeAuditRequestBody = (body) => {
+  if (!body || typeof body !== 'object') {
+    return body;
+  }
+
+  const sanitized = { ...body };
+
+  // Remove sensitive fields
+  const sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'api_key'];
+
+  sensitiveFields.forEach(field => {
+    if (sanitized[field]) {
+      sanitized[field] = '***REDACTED***';
+    }
+  });
+
+  return sanitized;
 };
 
 export default {
   getAuditLogs,
   getAuditLogStats,
   getUniqueActions,
-  deleteOldLogs
+  deleteOldLogs,
+  createAuditLog,
+  determineAuditAction,
+  sanitizeAuditRequestBody
 };

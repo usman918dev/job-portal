@@ -3,6 +3,7 @@ import { createUser } from './userService.js';
 import { comparePassword } from '../utils/passwordUtils.js';
 import { generateAuthToken } from '../utils/authUtils.js';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import { sendVerificationEmail, sendWelcomeEmail, sendPasswordResetEmail, sendPasswordResetConfirmationEmail } from '../services/emailService.js';
 
 export const signupUser = async (userData) => {
@@ -257,4 +258,28 @@ export const updateNotificationPreferences = async (email, notifications) => {
   return {
     notifications: user.notifications
   };
+};
+
+/**
+ * Verify JWT token and get user
+ * @param {String} token - JWT token
+ * @returns {Object} - User object
+ */
+export const verifyUserToken = async (token) => {
+  // Verify token
+  const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
+
+  // Get user from token
+  const user = await User.findById(decoded.id).select('-password');
+
+  if (!user) {
+    throw new Error('User not found. Authorization denied.');
+  }
+
+  // Check if user is active
+  if (!user.isActive || user.status === 'Suspended') {
+    throw new Error('Your account has been suspended. Please contact support.');
+  }
+
+  return user;
 };

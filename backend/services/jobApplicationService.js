@@ -111,13 +111,14 @@ export const submitApplication = async (jobId, coverLetter, resumeUrl, userId, a
   // Get job details and admin information for email notification
   try {
     const job = await Job.findById(jobId).populate('createdBy');
-    // Find applicant by email (frontend sends email as userId)
+    // Find applicant by email (userId is email)
     const applicant = await User.findOne({ email: userId });
 
     console.log('📧 Email Notification Debug:');
     console.log('- Job found:', !!job);
     console.log('- Job creator found:', !!job?.createdBy);
     console.log('- Applicant found:', !!applicant);
+    console.log('- Applicant details:', applicant ? { name: applicant.name, email: applicant.email } : 'N/A');
 
     if (job && job.createdBy && applicant) {
       const admin = job.createdBy;
@@ -201,9 +202,17 @@ export const getUserApplications = async (userId, page = 1, limit = 5) => {
 export const getAllApplications = async (adminId, page = 1, limit = 10) => {
   const skip = (page - 1) * limit;
 
+
   // Get all jobs created by this admin
   const adminJobs = await Job.find({ createdBy: adminId }).select('_id');
   const adminJobIds = adminJobs.map(job => job._id);
+
+
+  // If no jobs found, also check all jobs to see if they have createdBy field
+  if (adminJobs.length === 0) {
+    const allJobs = await Job.find({}).select('_id title createdBy').limit(5);
+    console.log('getAllApplications - Sample of all jobs:', JSON.stringify(allJobs, null, 2));
+  }
 
   // Get applications only for this admin's jobs with pagination
   const applications = await Application.find({
@@ -213,6 +222,8 @@ export const getAllApplications = async (adminId, page = 1, limit = 10) => {
   .sort({ createdAt: -1 })
   .skip(skip)
   .limit(limit);
+
+  console.log('getAllApplications - Found applications:', applications.length);
 
   // Get total count for pagination metadata
   const totalApplications = await Application.countDocuments({

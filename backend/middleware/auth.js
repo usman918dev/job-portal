@@ -1,5 +1,4 @@
-import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import { verifyUserToken } from '../services/authService.js';
 
 // Middleware to verify JWT token
 export const verifyToken = async (req, res, next) => {
@@ -14,26 +13,8 @@ export const verifyToken = async (req, res, next) => {
       });
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
-    
-    // Get user from token
-    const user = await User.findById(decoded.id).select('-password');
-    
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'User not found. Authorization denied.'
-      });
-    }
-
-    // Check if user is active
-    if (!user.isActive || user.status === 'Suspended') {
-      return res.status(403).json({
-        success: false,
-        message: 'Your account has been suspended. Please contact support.'
-      });
-    }
+    // Verify token and get user using service
+    const user = await verifyUserToken(token);
 
     // Attach user to request
     req.user = user;
@@ -49,6 +30,13 @@ export const verifyToken = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: 'Token expired. Please login again.'
+      });
+    }
+    // Handle custom errors from service
+    if (error.message.includes('not found') || error.message.includes('suspended')) {
+      return res.status(401).json({
+        success: false,
+        message: error.message
       });
     }
     res.status(500).json({
