@@ -2,24 +2,23 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Users, Briefcase, TrendingUp, Search, MapPin, Star } from 'lucide-react';
 import bgImage from '../assets/bg-image-main.jpg';
+import { LANDING_HERO_CONSTANTS } from '../constants/landingHeroConstants.js';
+import { handleGetStarted, handleSignIn } from '../utils/landingHeroUtils.js';
 
 const LandingHero = ({ setShowAuthModal, setAuthMode }) => {
-  const handleGetStarted = () => {
-    setAuthMode('Sign Up');
-    setShowAuthModal(true);
+  // Icon mapping for stats
+  const iconMap = {
+    Briefcase,
+    Users,
+    TrendingUp,
+    Star
   };
 
-  const handleSignIn = () => {
-    setAuthMode('Login');
-    setShowAuthModal(true);
-  };
-
-  const stats = [
-    { icon: Briefcase, number: "50K+", label: "Active Jobs" },
-    { icon: Users, number: "1M+", label: "Job Seekers" },
-    { icon: TrendingUp, number: "95%", label: "Success Rate" },
-    { icon: Star, number: "4.9/5", label: "User Rating" }
-  ];
+  // Map stats with actual icon components
+  const stats = LANDING_HERO_CONSTANTS.STATS.map(stat => ({
+    ...stat,
+    icon: iconMap[stat.icon]
+  }));
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -102,20 +101,20 @@ const LandingHero = ({ setShowAuthModal, setAuthMode }) => {
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(59, 130, 246, 0.4)" }}
                 whileTap={{ scale: 0.95 }}
-                onClick={handleGetStarted}
+                onClick={() => handleGetStarted(setAuthMode, setShowAuthModal)}
                 className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-lg rounded-xl shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 flex items-center space-x-3 group"
               >
-                <span>Get Started Free</span>
+                <span>{LANDING_HERO_CONSTANTS.CONTENT.GET_STARTED_TEXT}</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
               </motion.button>
               
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={handleSignIn}
+                onClick={() => handleSignIn(setAuthMode, setShowAuthModal)}
                 className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-semibold text-lg rounded-xl border border-white/20 hover:bg-white/20 transition-all duration-300 flex items-center space-x-3"
               >
-                <span>Sign In</span>
+                <span>{LANDING_HERO_CONSTANTS.CONTENT.SIGN_IN_TEXT}</span>
               </motion.button>
             </motion.div>
 
@@ -163,19 +162,19 @@ const LandingHero = ({ setShowAuthModal, setAuthMode }) => {
                 <div className="flex flex-col lg:flex-row gap-4">
                   <div className="flex-1 flex items-center px-4 py-3 bg-gray-50 rounded-xl">
                     <Search className="text-gray-400 w-5 h-5 mr-3" />
-                    <span className="text-gray-500">Job title, keywords, or company</span>
+                    <span className="text-gray-500">{LANDING_HERO_CONSTANTS.CONTENT.SEARCH_PLACEHOLDER_JOB}</span>
                   </div>
                   <div className="flex-1 flex items-center px-4 py-3 bg-gray-50 rounded-xl">
                     <MapPin className="text-gray-400 w-5 h-5 mr-3" />
-                    <span className="text-gray-500">Location or remote</span>
+                    <span className="text-gray-500">{LANDING_HERO_CONSTANTS.CONTENT.SEARCH_PLACEHOLDER_LOCATION}</span>
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={handleGetStarted}
+                    onClick={() => handleGetStarted(setAuthMode, setShowAuthModal)}
                     className="px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-200"
                   >
-                    Search Jobs
+                    {LANDING_HERO_CONSTANTS.CONTENT.SEARCH_BUTTON_TEXT}
                   </motion.button>
                 </div>
                 <div className="mt-4 text-center">

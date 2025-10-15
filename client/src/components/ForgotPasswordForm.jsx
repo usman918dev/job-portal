@@ -3,82 +3,58 @@ import { motion } from 'framer-motion';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { forgotPassword } from '../services/authService';
+import { FORGOT_PASSWORD_CONSTANTS } from '../constants/forgotPasswordConstants.js';
+import {
+  handleForgotPasswordSubmit,
+  resetFormForRetry,
+  getSuccessMessage,
+  getAnimationVariant,
+  getCssClasses
+} from '../utils/forgotPasswordUtils.js';
 
 const ForgotPasswordForm = ({ onBack }) => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!email) {
-      toast.error('Please enter your email address');
-      return;
-    }
-
-    if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
-      toast.error('Please enter a valid email address');
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const response = await forgotPassword(email);
-      
-      if (response.success) {
-        setEmailSent(true);
-        toast.success('Password reset link sent! Please check your email.');
-      }
-    } catch (error) {
-      toast.error(error.message || 'Failed to send password reset email');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   if (emailSent) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        {...getAnimationVariant('successContainer')}
         className="text-center space-y-6"
       >
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-          <CheckCircle className="w-8 h-8 text-green-600" />
+        <div className={`inline-flex items-center justify-center ${FORGOT_PASSWORD_CONSTANTS.UI_CONFIG.SIZES.iconContainer} ${FORGOT_PASSWORD_CONSTANTS.UI_CONFIG.COLORS.success} rounded-full mb-4`}>
+          <CheckCircle className={`${FORGOT_PASSWORD_CONSTANTS.UI_CONFIG.ICON_SIZE.main} ${FORGOT_PASSWORD_CONSTANTS.UI_CONFIG.COLORS.successIcon}`} />
         </div>
-        
+
         <div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Check Your Email</h3>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">{FORGOT_PASSWORD_CONSTANTS.MESSAGES.SUCCESS_TITLE}</h3>
           <p className="text-gray-600 mb-4">
-            We've sent a password reset link to <strong>{email}</strong>
+            {getSuccessMessage(email)}
           </p>
           <p className="text-sm text-gray-500 mb-6">
-            The link will expire in 15 minutes for security reasons.
+            {FORGOT_PASSWORD_CONSTANTS.MESSAGES.SUCCESS_EXPIRY}
           </p>
         </div>
 
         <div className="space-y-3">
           <motion.button
-            onClick={() => {
-              setEmailSent(false);
-              setEmail('');
-            }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg"
+            onClick={() => resetFormForRetry(setEmailSent, setEmail)}
+            whileHover={getAnimationVariant('buttonHover')}
+            whileTap={getAnimationVariant('buttonTap')}
+            className={`w-full bg-gradient-to-r ${FORGOT_PASSWORD_CONSTANTS.UI_CONFIG.COLORS.primary} text-white font-semibold ${FORGOT_PASSWORD_CONSTANTS.UI_CONFIG.SIZES.button} rounded-lg hover:${FORGOT_PASSWORD_CONSTANTS.UI_CONFIG.COLORS.primaryHover} transition-all duration-200 shadow-md hover:shadow-lg`}
           >
-            Send Another Email
+            {FORGOT_PASSWORD_CONSTANTS.MESSAGES.SEND_ANOTHER}
           </motion.button>
-          
+
           <motion.button
             onClick={onBack}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center justify-center gap-2"
+            whileHover={getAnimationVariant('buttonHover')}
+            whileTap={getAnimationVariant('buttonTap')}
+            className={`${FORGOT_PASSWORD_CONSTANTS.CLASSES.buttonSecondary}`}
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Sign In
+            <ArrowLeft className={FORGOT_PASSWORD_CONSTANTS.UI_CONFIG.ICON_SIZE.small} />
+            {FORGOT_PASSWORD_CONSTANTS.FORM_CONFIG.BACK_BUTTON_TEXT}
           </motion.button>
         </div>
       </motion.div>
@@ -87,13 +63,11 @@ const ForgotPasswordForm = ({ onBack }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      {...getAnimationVariant('container')}
     >
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-          <Mail className="w-8 h-8 text-blue-600" />
+        <div className={`inline-flex items-center justify-center ${FORGOT_PASSWORD_CONSTANTS.UI_CONFIG.SIZES.iconContainer} bg-blue-100 rounded-full mb-4`}>
+          <Mail className={`${FORGOT_PASSWORD_CONSTANTS.UI_CONFIG.ICON_SIZE.main} ${FORGOT_PASSWORD_CONSTANTS.UI_CONFIG.COLORS.primaryIcon}`} />
         </div>
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Forgot Password?</h3>
         <p className="text-gray-600">
@@ -101,18 +75,18 @@ const ForgotPasswordForm = ({ onBack }) => {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={(e) => handleForgotPasswordSubmit(e, email, setIsLoading, setEmailSent)} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-            Email Address
+            {FORGOT_PASSWORD_CONSTANTS.FORM_CONFIG.EMAIL_LABEL}
           </label>
           <input
             id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            placeholder={FORGOT_PASSWORD_CONSTANTS.FORM_CONFIG.EMAIL_PLACEHOLDER}
+            className={getCssClasses('input', { disabled: isLoading })}
             disabled={isLoading}
             required
           />
@@ -122,33 +96,33 @@ const ForgotPasswordForm = ({ onBack }) => {
           <motion.button
             type="submit"
             disabled={isLoading}
-            whileHover={{ scale: isLoading ? 1 : 1.02 }}
-            whileTap={{ scale: isLoading ? 1 : 0.98 }}
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            whileHover={isLoading ? getAnimationVariant('loadingButtonHover') : getAnimationVariant('buttonHover')}
+            whileTap={isLoading ? getAnimationVariant('loadingButtonTap') : getAnimationVariant('buttonTap')}
+            className={FORGOT_PASSWORD_CONSTANTS.CLASSES.buttonPrimary}
           >
             {isLoading ? (
               <>
                 <motion.div
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
+                  className={FORGOT_PASSWORD_CONSTANTS.CLASSES.spinner}
                 />
-                Sending...
+                {FORGOT_PASSWORD_CONSTANTS.FORM_CONFIG.LOADING_TEXT}
               </>
             ) : (
-              'Send Reset Link'
+              FORGOT_PASSWORD_CONSTANTS.FORM_CONFIG.SUBMIT_BUTTON_TEXT
             )}
           </motion.button>
 
           <motion.button
             type="button"
             onClick={onBack}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-200 transition-all duration-200 flex items-center justify-center gap-2"
+            whileHover={getAnimationVariant('buttonHover')}
+            whileTap={getAnimationVariant('buttonTap')}
+            className={FORGOT_PASSWORD_CONSTANTS.CLASSES.buttonSecondary}
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Sign In
+            <ArrowLeft className={FORGOT_PASSWORD_CONSTANTS.UI_CONFIG.ICON_SIZE.small} />
+            {FORGOT_PASSWORD_CONSTANTS.FORM_CONFIG.BACK_BUTTON_TEXT}
           </motion.button>
         </div>
       </form>

@@ -1,79 +1,24 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { TrendingUp, Users, Briefcase, Award, Globe, Clock } from 'lucide-react';
+import React from "react";
+import { motion } from "framer-motion";
+import {
+  TrendingUp,
+  Users,
+  Briefcase,
+  Award,
+  Globe,
+  Clock,
+} from "lucide-react";
+import { LANDING_STATS_CONSTANTS } from "../constants/landingStatsConstants.js";
 
-const LandingStats = ({ setShowAuthModal, setAuthMode }) => {
-  const handleGetStarted = () => {
-    setAuthMode('Sign Up');
-    setShowAuthModal(true);
-  };
+const LandingStats = () => {
+  // Icon mapping for stats
+  const iconMap = { Briefcase, Users, TrendingUp, Award, Globe, Clock };
 
-  const stats = [
-    {
-      number: "50,000+",
-      label: "Active Job Listings",
-      sublabel: "Updated daily",
-      icon: Briefcase,
-      color: "from-blue-500 to-cyan-500"
-    },
-    {
-      number: "1M+",
-      label: "Registered Users",
-      sublabel: "Growing community",
-      icon: Users,
-      color: "from-purple-500 to-pink-500"
-    },
-    {
-      number: "95%",
-      label: "Success Rate",
-      sublabel: "Job placement",
-      icon: TrendingUp,
-      color: "from-green-500 to-emerald-500"
-    },
-    {
-      number: "500+",
-      label: "Partner Companies",
-      sublabel: "Trusted employers",
-      icon: Award,
-      color: "from-orange-500 to-red-500"
-    },
-    {
-      number: "50+",
-      label: "Countries",
-      sublabel: "Global reach",
-      icon: Globe,
-      color: "from-indigo-500 to-purple-500"
-    },
-    {
-      number: "24/7",
-      label: "Support",
-      sublabel: "Always here to help",
-      icon: Clock,
-      color: "from-teal-500 to-blue-500"
-    }
-  ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    }
-  };
+  // Map stats with actual icon components
+  const stats = LANDING_STATS_CONSTANTS.STATS.map((stat) => ({
+    ...stat,
+    icon: iconMap[stat.icon],
+  }));
 
   return (
     <section className="py-20 lg:py-32 bg-gradient-to-br from-gray-50 to-blue-50">
@@ -96,22 +41,26 @@ const LandingStats = ({ setShowAuthModal, setAuthMode }) => {
             <TrendingUp className="w-4 h-4 mr-2" />
             Our Impact
           </motion.div>
-          
+
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">
-            Trusted by{' '}
+            Trusted by{" "}
             <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               Millions Worldwide
             </span>
           </h2>
-          
+
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Join a thriving ecosystem of career success. Our platform connects ambitious professionals with forward-thinking companies, creating meaningful career opportunities that drive both personal growth and business innovation. These numbers represent real people achieving real career milestones.
+            Join a thriving ecosystem of career success. Our platform connects
+            ambitious professionals with forward-thinking companies, creating
+            meaningful career opportunities that drive both personal growth and
+            business innovation. These numbers represent real people achieving
+            real career milestones.
           </p>
         </motion.div>
 
         {/* Stats Grid */}
         <motion.div
-          variants={containerVariants}
+          variants={LANDING_STATS_CONSTANTS.CONTAINER_VARIANTS}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
@@ -120,19 +69,21 @@ const LandingStats = ({ setShowAuthModal, setAuthMode }) => {
           {stats.map((stat, index) => (
             <motion.div
               key={index}
-              variants={itemVariants}
-              whileHover={{ 
+              variants={LANDING_STATS_CONSTANTS.ITEM_VARIANTS}
+              whileHover={{
                 y: -10,
                 scale: 1.02,
-                transition: { duration: 0.3 }
+                transition: { duration: 0.3 },
               }}
               className="group relative"
             >
               {/* Card */}
               <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 hover:shadow-2xl transition-all duration-300 text-center relative overflow-hidden">
                 {/* Background gradient effect */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
-                
+                <div
+                  className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}
+                ></div>
+
                 {/* Icon */}
                 <motion.div
                   whileHover={{ rotate: 360 }}
@@ -183,10 +134,10 @@ const LandingStats = ({ setShowAuthModal, setAuthMode }) => {
               Growing Every Day
             </h3>
             <p className="text-gray-600 text-lg mb-8 max-w-2xl mx-auto">
-              Our platform continues to expand, connecting more job seekers with their ideal opportunities. 
-              Be part of this success story.
+              Our platform continues to expand, connecting more job seekers with
+              their ideal opportunities. Be part of this success story.
             </p>
-            
+
             {/* Mini stats row */}
             <div className="flex flex-wrap justify-center gap-6 lg:gap-12">
               <div className="text-center">
@@ -195,7 +146,9 @@ const LandingStats = ({ setShowAuthModal, setAuthMode }) => {
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-green-600">300+</div>
-                <div className="text-sm text-gray-500">Successful matches daily</div>
+                <div className="text-sm text-gray-500">
+                  Successful matches daily
+                </div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600">98%</div>

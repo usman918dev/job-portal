@@ -2,95 +2,50 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, Lock, Eye, EyeOff, UserCheck, Shield, Building2 } from "lucide-react";
 import { toast } from "react-toastify";
+import {
+  DEFAULT_FORM_STATE,
+  ANIMATION_VARIANTS,
+  USER_ROLES,
+  PASSWORD_STRENGTH
+} from "../constants/signUpConstants";
+import {
+  checkPasswordStrength,
+  getPasswordStrengthMessage,
+  validateSignUpForm,
+  handleSignUpInputChange,
+  passwordsMatch,
+  requiresCompanyName
+} from "../utils/signUpUtils";
 
 const SignUpForm = ({ onSubmit, isLoading }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    role: "user",
-    companyName: ""
-  });
+  const [formData, setFormData] = useState(DEFAULT_FORM_STATE);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [errors, setErrors] = useState({});
 
-  const checkPasswordStrength = (pass) => {
-    let score = 0;
-    if (!pass) return score;
-    if (pass.length > 6) score += 1;
-    if (pass.length > 10) score += 1;
-    if (/[A-Z]/.test(pass)) score += 1;
-    if (/[0-9]/.test(pass)) score += 1;
-    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
-    return score;
-  };
-
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    const { formData: updatedFormData, errors: updatedErrors } = handleSignUpInputChange(
+      field,
+      value,
+      formData,
+      errors,
+      setPasswordStrength
+    );
+
+    setFormData(updatedFormData);
+    setErrors(updatedErrors);
+
     // Debug log for role changes
     if (field === "role") {
       console.log("Role changed to:", value);
     }
-    
-    // Clear errors when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
-    }
-    
-    if (field === "password") {
-      setPasswordStrength(checkPasswordStrength(value));
-      // Clear confirm password error if passwords now match
-      if (formData.confirmPassword && value === formData.confirmPassword) {
-        setErrors(prev => ({ ...prev, confirmPassword: "" }));
-      }
-    }
-    
-    if (field === "confirmPassword") {
-      // Real-time password match validation
-      if (value !== formData.password) {
-        setErrors(prev => ({ ...prev, confirmPassword: "Passwords do not match" }));
-      } else {
-        setErrors(prev => ({ ...prev, confirmPassword: "" }));
-      }
-    }
   };
 
   const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = "Full name is required";
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-    
-    // Validate company name for admin/recruiter
-    if (formData.role === "admin" && !formData.companyName.trim()) {
-      newErrors.companyName = "Company name is required for recruiters";
-    }
-    
-    if (!formData.password.trim()) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    } else if (passwordStrength < 3) {
-      newErrors.password = "Please use a stronger password";
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const validation = validateSignUpForm(formData);
+    setErrors(validation.errors);
+    return validation.isValid;
   };
 
   const handleSubmit = (e) => {
@@ -99,7 +54,7 @@ const SignUpForm = ({ onSubmit, isLoading }) => {
       // Ensure role is included in the submission data
       const submissionData = {
         ...formData,
-        role: formData.role || "user" // Default to user if somehow role is empty
+        role: formData.role || USER_ROLES.USER // Default to user if somehow role is empty
       };
       console.log("Submitting sign up data:", submissionData); // Debug log
       onSubmit(submissionData);
@@ -108,10 +63,10 @@ const SignUpForm = ({ onSubmit, isLoading }) => {
 
   return (
     <motion.form 
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      transition={{ duration: 0.3 }}
+      initial={ANIMATION_VARIANTS.form.initial}
+      animate={ANIMATION_VARIANTS.form.animate}
+      exit={ANIMATION_VARIANTS.form.exit}
+      transition={ANIMATION_VARIANTS.form.transition}
       onSubmit={handleSubmit}
       className="space-y-3"
     >
@@ -124,35 +79,35 @@ const SignUpForm = ({ onSubmit, isLoading }) => {
         <div className="grid grid-cols-2 gap-2">
           <motion.button
             type="button"
-            onClick={() => handleInputChange("role", "user")}
+            onClick={() => handleInputChange("role", USER_ROLES.USER)}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border-2 transition-all duration-200 ${
-              formData.role === "user"
+              formData.role === USER_ROLES.USER
                 ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm shadow-blue-100"
                 : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
             }`}
           >
             <User size={14} />
             <span className="font-medium text-sm">Job Seeker</span>
-            {formData.role === "user" && (
+            {formData.role === USER_ROLES.USER && (
               <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
             )}
           </motion.button>
           <motion.button
             type="button"
-            onClick={() => handleInputChange("role", "admin")}
+            onClick={() => handleInputChange("role", USER_ROLES.ADMIN)}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border-2 transition-all duration-200 ${
-              formData.role === "admin"
+              formData.role === USER_ROLES.ADMIN
                 ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm shadow-blue-100"
                 : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
             }`}
           >
             <Shield size={14} />
             <span className="font-medium text-sm">Recruiter</span>
-            {formData.role === "admin" && (
+            {formData.role === USER_ROLES.ADMIN && (
               <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
             )}
           </motion.button>
@@ -160,11 +115,11 @@ const SignUpForm = ({ onSubmit, isLoading }) => {
       </div>
 
       {/* Company Name Field - shown only for admin/recruiter */}
-      {formData.role === "admin" && (
+      {requiresCompanyName(formData.role) && (
         <motion.div 
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
+          initial={ANIMATION_VARIANTS.companyField.initial}
+          animate={ANIMATION_VARIANTS.companyField.animate}
+          exit={ANIMATION_VARIANTS.companyField.exit}
           className="space-y-1"
         >
           <label htmlFor="companyName" className="text-sm font-medium text-gray-700 ml-1 flex items-center gap-1.5">
@@ -302,12 +257,7 @@ const SignUpForm = ({ onSubmit, isLoading }) => {
               ))}
             </div>
             <p className="text-xs mt-1 text-gray-500">
-              {passwordStrength === 0 && "Enter a password"}
-              {passwordStrength === 1 && "Password is too weak"}
-              {passwordStrength === 2 && "Password is weak"}
-              {passwordStrength === 3 && "Password is good"}
-              {passwordStrength === 4 && "Password is strong"}
-              {passwordStrength === 5 && "Password is very strong"}
+              {getPasswordStrengthMessage(passwordStrength)}
             </p>
           </div>
         )}
@@ -325,7 +275,7 @@ const SignUpForm = ({ onSubmit, isLoading }) => {
             className={`w-full px-3 py-2.5 bg-gray-50 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 transition-all placeholder:text-gray-400 pr-12 ${
               errors.confirmPassword 
                 ? "border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50" 
-                : formData.confirmPassword && formData.password === formData.confirmPassword
+                : formData.confirmPassword && passwordsMatch(formData.password, formData.confirmPassword)
                   ? "border-green-300 focus:ring-green-500 focus:border-green-500 bg-green-50"
                   : "border-gray-200 focus:ring-blue-500 focus:border-transparent"
             }`}
@@ -346,7 +296,7 @@ const SignUpForm = ({ onSubmit, isLoading }) => {
         {/* Password match indicator */}
         {formData.confirmPassword && (
           <div className="flex items-center gap-1 ml-1">
-            {formData.password === formData.confirmPassword ? (
+            {passwordsMatch(formData.password, formData.confirmPassword) ? (
               <>
                 <span className="w-1 h-1 bg-green-600 rounded-full"></span>
                 <p className="text-xs text-green-600">Passwords match</p>
@@ -371,8 +321,8 @@ const SignUpForm = ({ onSubmit, isLoading }) => {
       <motion.button
         type="submit"
         disabled={isLoading}
-        whileHover={{ scale: isLoading ? 1 : 1.01 }}
-        whileTap={{ scale: isLoading ? 1 : 0.99 }}
+        whileHover={isLoading ? ANIMATION_VARIANTS.button.disabled : ANIMATION_VARIANTS.button.hover}
+        whileTap={isLoading ? ANIMATION_VARIANTS.button.disabled : ANIMATION_VARIANTS.button.tap}
         className="relative w-full py-3 mt-4 font-semibold text-white transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden group"
       >
         {/* Button background effect */}

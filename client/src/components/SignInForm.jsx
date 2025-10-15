@@ -1,30 +1,39 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, Lock, Eye, EyeOff, UserCheck, Shield } from "lucide-react";
+import {
+  DEFAULT_FORM_STATE,
+  ANIMATION_VARIANTS,
+  USER_ROLES,
+} from "../constants/signInConstants";
+import {
+  validateSignInForm,
+  handleSignInInputChange,
+} from "../utils/signInUtils";
 
-const SignInForm = ({ onSubmit, isLoading, onEmailVerificationNeeded, onForgotPassword }) => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    role: "user"
-  });
+const SignInForm = ({
+  onSubmit,
+  isLoading,
+  onEmailVerificationNeeded,
+  onForgotPassword,
+}) => {
+  const [formData, setFormData] = useState(DEFAULT_FORM_STATE);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [emailVerificationError, setEmailVerificationError] = useState(null);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    const { formData: updatedFormData, errors: updatedErrors } =
+      handleSignInInputChange(field, value, formData, errors);
+
+    setFormData(updatedFormData);
+    setErrors(updatedErrors);
+
     // Debug log for role changes
     if (field === "role") {
       console.log("Sign in role changed to:", value);
     }
-    
-    // Clear errors when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
-    }
-    
+
     // Clear email verification error when user changes email
     if (field === "email" && emailVerificationError) {
       setEmailVerificationError(null);
@@ -32,22 +41,9 @@ const SignInForm = ({ onSubmit, isLoading, onEmailVerificationNeeded, onForgotPa
   };
 
   const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-    
-    if (!formData.password.trim()) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const validation = validateSignInForm(formData.email, formData.password);
+    setErrors(validation.errors);
+    return validation.isValid;
   };
 
   const handleSubmit = async (e) => {
@@ -58,7 +54,7 @@ const SignInForm = ({ onSubmit, isLoading, onEmailVerificationNeeded, onForgotPa
         // Ensure role is included in the submission data
         const submissionData = {
           ...formData,
-          role: formData.role || "user" // Default to user if somehow role is empty
+          role: formData.role || USER_ROLES.USER, // Default to user if somehow role is empty
         };
         console.log("Submitting sign in data:", submissionData); // Debug log
         await onSubmit(submissionData);
@@ -67,7 +63,7 @@ const SignInForm = ({ onSubmit, isLoading, onEmailVerificationNeeded, onForgotPa
         if (error.emailVerificationRequired) {
           setEmailVerificationError({
             message: error.message,
-            email: error.email
+            email: error.email,
           });
           if (onEmailVerificationNeeded) {
             onEmailVerificationNeeded(error.email);
@@ -79,11 +75,11 @@ const SignInForm = ({ onSubmit, isLoading, onEmailVerificationNeeded, onForgotPa
   };
 
   return (
-    <motion.form 
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      transition={{ duration: 0.3 }}
+    <motion.form
+      initial={ANIMATION_VARIANTS.form.initial}
+      animate={ANIMATION_VARIANTS.form.animate}
+      exit={ANIMATION_VARIANTS.form.exit}
+      transition={ANIMATION_VARIANTS.form.transition}
       onSubmit={handleSubmit}
       className="px-8 pb-6 space-y-4"
     >
@@ -97,11 +93,18 @@ const SignInForm = ({ onSubmit, isLoading, onEmailVerificationNeeded, onForgotPa
           <div className="flex items-start gap-3">
             <Mail className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <h4 className="text-sm font-medium text-yellow-800 mb-1">Email Verification Required</h4>
-              <p className="text-sm text-yellow-700 mb-2">{emailVerificationError.message}</p>
+              <h4 className="text-sm font-medium text-yellow-800 mb-1">
+                Email Verification Required
+              </h4>
+              <p className="text-sm text-yellow-700 mb-2">
+                {emailVerificationError.message}
+              </p>
               <button
                 type="button"
-                onClick={() => onEmailVerificationNeeded && onEmailVerificationNeeded(emailVerificationError.email)}
+                onClick={() =>
+                  onEmailVerificationNeeded &&
+                  onEmailVerificationNeeded(emailVerificationError.email)
+                }
                 className="text-sm font-medium text-yellow-800 hover:text-yellow-900 underline"
               >
                 Resend verification email
@@ -120,35 +123,35 @@ const SignInForm = ({ onSubmit, isLoading, onEmailVerificationNeeded, onForgotPa
         <div className="grid grid-cols-2 gap-3">
           <motion.button
             type="button"
-            onClick={() => handleInputChange("role", "user")}
+            onClick={() => handleInputChange("role", USER_ROLES.USER)}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
-              formData.role === "user"
+              formData.role === USER_ROLES.USER
                 ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md shadow-blue-100"
                 : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
             }`}
           >
             <User size={16} />
             <span className="font-medium">Job Seeker</span>
-            {formData.role === "user" && (
+            {formData.role === USER_ROLES.USER && (
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
             )}
           </motion.button>
           <motion.button
             type="button"
-            onClick={() => handleInputChange("role", "admin")}
+            onClick={() => handleInputChange("role", USER_ROLES.ADMIN)}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
-              formData.role === "admin"
+              formData.role === USER_ROLES.ADMIN
                 ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md shadow-blue-100"
                 : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
             }`}
           >
             <Shield size={16} />
             <span className="font-medium">Recruiter</span>
-            {formData.role === "admin" && (
+            {formData.role === USER_ROLES.ADMIN && (
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
             )}
           </motion.button>
@@ -157,15 +160,18 @@ const SignInForm = ({ onSubmit, isLoading, onEmailVerificationNeeded, onForgotPa
 
       {/* Email Field */}
       <div className="space-y-1.5">
-        <label htmlFor="email" className="text-sm font-medium text-gray-700 ml-1 flex items-center gap-1.5">
+        <label
+          htmlFor="email"
+          className="text-sm font-medium text-gray-700 ml-1 flex items-center gap-1.5"
+        >
           <Mail size={16} className="text-gray-500" />
           Email Address
         </label>
         <input
           id="email"
           className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-700 focus:outline-none focus:ring-2 transition-all placeholder:text-gray-400 ${
-            errors.email 
-              ? "border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50" 
+            errors.email
+              ? "border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50"
               : "border-gray-200 focus:ring-blue-500 focus:border-transparent"
           }`}
           value={formData.email}
@@ -184,7 +190,10 @@ const SignInForm = ({ onSubmit, isLoading, onEmailVerificationNeeded, onForgotPa
 
       {/* Password Field */}
       <div className="space-y-1.5">
-        <label htmlFor="password" className="text-sm font-medium text-gray-700 ml-1 flex items-center gap-1.5">
+        <label
+          htmlFor="password"
+          className="text-sm font-medium text-gray-700 ml-1 flex items-center gap-1.5"
+        >
           <Lock size={16} className="text-gray-500" />
           Password
         </label>
@@ -192,8 +201,8 @@ const SignInForm = ({ onSubmit, isLoading, onEmailVerificationNeeded, onForgotPa
           <input
             id="password"
             className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-700 focus:outline-none focus:ring-2 transition-all placeholder:text-gray-400 pr-12 ${
-              errors.password 
-                ? "border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50" 
+              errors.password
+                ? "border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50"
                 : "border-gray-200 focus:ring-blue-500 focus:border-transparent"
             }`}
             value={formData.password}
@@ -202,7 +211,7 @@ const SignInForm = ({ onSubmit, isLoading, onEmailVerificationNeeded, onForgotPa
             placeholder="Enter your password"
             required
           />
-          <button 
+          <button
             type="button"
             className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500 hover:text-gray-700 transition-colors"
             onClick={() => setShowPassword(!showPassword)}
@@ -239,7 +248,7 @@ const SignInForm = ({ onSubmit, isLoading, onEmailVerificationNeeded, onForgotPa
       >
         {/* Button background effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-700 to-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-        
+
         <span className="relative flex items-center justify-center">
           {isLoading ? (
             <>

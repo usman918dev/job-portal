@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Briefcase, Menu, X, LogIn, UserPlus, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { LANDING_NAVBAR_CONSTANTS } from '../constants/landingNavbarConstants.js';
+import { handleSignUp, handleSignIn, handleRecruiterPortal, createScrollHandler } from '../utils/landingNavbarUtils.js';
 
 const LandingNavbar = ({ setShowAuthModal, setAuthMode }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -9,35 +11,16 @@ const LandingNavbar = ({ setShowAuthModal, setAuthMode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
+    const handleScroll = createScrollHandler(setIsScrolled);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSignUp = () => {
-    setAuthMode('Sign Up');
-    setShowAuthModal(true);
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleSignIn = () => {
-    setAuthMode('Login');
-    setShowAuthModal(true);
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleRecruiterPortal = () => {
-    navigate('/admin');
-    setIsMobileMenuOpen(false);
-  };
-
   return (
     <motion.nav
-      initial={{ y: -100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      initial={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.NAV_INITIAL}
+      animate={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.NAV_ANIMATE}
+      transition={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.NAV_TRANSITION}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled 
           ? 'bg-gradient-to-r from-slate-900 to-blue-900 shadow-2xl border-b border-blue-500/30' 
@@ -48,9 +31,9 @@ const LandingNavbar = ({ setShowAuthModal, setAuthMode }) => {
         <div className="flex justify-between items-center h-16 lg:h-20">
           {/* Logo */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+            initial={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.LOGO_INITIAL}
+            animate={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.LOGO_ANIMATE}
+            transition={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.LOGO_TRANSITION}
             className="flex items-center space-x-3 cursor-pointer"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
@@ -65,27 +48,27 @@ const LandingNavbar = ({ setShowAuthModal, setAuthMode }) => {
                   ? 'text-white drop-shadow-lg'
                   : 'text-white drop-shadow-lg'
               }`}>
-                Jobly
+                {LANDING_NAVBAR_CONSTANTS.CONTENT.BRAND_NAME}
               </span>
               <div className={`text-xs font-medium transition-colors duration-300 ${
                 isScrolled ? 'text-blue-200 drop-shadow-md' : 'text-white/90 drop-shadow-md'
               }`}>
-                Find Your Future
+                {LANDING_NAVBAR_CONSTANTS.CONTENT.BRAND_TAGLINE}
               </div>
             </div>
           </motion.div>
 
           {/* Desktop Navigation */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
+            initial={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.DESKTOP_NAV_INITIAL}
+            animate={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.DESKTOP_NAV_ANIMATE}
+            transition={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.DESKTOP_NAV_TRANSITION}
             className="hidden md:flex items-center space-x-1"
           >
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={handleRecruiterPortal}
+              onClick={() => handleRecruiterPortal(navigate, setIsMobileMenuOpen)}
               className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center space-x-2 ${
                 isScrolled 
                   ? 'text-white hover:text-blue-200 hover:bg-blue-600/30 drop-shadow-md' 
@@ -93,21 +76,21 @@ const LandingNavbar = ({ setShowAuthModal, setAuthMode }) => {
               }`}
             >
               <Shield className="w-4 h-4" />
-              <span>Recruiter Portal</span>
+              <span>{LANDING_NAVBAR_CONSTANTS.CONTENT.RECRUITER_PORTAL}</span>
             </motion.button>
           </motion.div>
 
           {/* Desktop Auth Buttons */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
+            initial={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.DESKTOP_AUTH_INITIAL}
+            animate={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.DESKTOP_AUTH_ANIMATE}
+            transition={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.DESKTOP_AUTH_TRANSITION}
             className="hidden md:flex items-center space-x-3"
           >
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={handleSignIn}
+              onClick={() => handleSignIn(setAuthMode, setShowAuthModal, setIsMobileMenuOpen)}
               className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 flex items-center space-x-2 ${
                 isScrolled 
                   ? 'text-white hover:text-blue-200 hover:bg-blue-600/30 drop-shadow-md' 
@@ -115,25 +98,25 @@ const LandingNavbar = ({ setShowAuthModal, setAuthMode }) => {
               }`}
             >
               <LogIn className="w-4 h-4" />
-              <span>Sign In</span>
+              <span>{LANDING_NAVBAR_CONSTANTS.CONTENT.SIGN_IN}</span>
             </motion.button>
             
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: "0 10px 25px rgba(59, 130, 246, 0.3)" }}
               whileTap={{ scale: 0.95 }}
-              onClick={handleSignUp}
+              onClick={() => handleSignUp(setAuthMode, setShowAuthModal, setIsMobileMenuOpen)}
               className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center space-x-2"
             >
               <UserPlus className="w-4 h-4" />
-              <span>Get Started</span>
+              <span>{LANDING_NAVBAR_CONSTANTS.CONTENT.GET_STARTED}</span>
             </motion.button>
           </motion.div>
 
           {/* Mobile Menu Button */}
           <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
+            initial={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.MOBILE_BUTTON_INITIAL}
+            animate={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.MOBILE_BUTTON_ANIMATE}
+            transition={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.MOBILE_BUTTON_TRANSITION}
             className="md:hidden p-2 rounded-lg transition-colors duration-200"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
@@ -147,43 +130,43 @@ const LandingNavbar = ({ setShowAuthModal, setAuthMode }) => {
 
         {/* Mobile Menu */}
         <motion.div
-          initial={{ opacity: 0, height: 0 }}
+          initial={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.MOBILE_MENU_INITIAL}
           animate={{ 
             opacity: isMobileMenuOpen ? 1 : 0, 
             height: isMobileMenuOpen ? 'auto' : 0 
           }}
-          transition={{ duration: 0.3 }}
+          transition={LANDING_NAVBAR_CONSTANTS.ANIMATIONS.MOBILE_MENU_TRANSITION}
           className="md:hidden overflow-hidden bg-gradient-to-r from-slate-900 to-blue-900 backdrop-blur-md rounded-xl mt-2 shadow-2xl border border-blue-500/30"
         >
           <div className="p-4 space-y-3">
             <motion.button
               whileHover={{ scale: 1.02, backgroundColor: "rgba(59, 130, 246, 0.3)" }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleRecruiterPortal}
+              onClick={() => handleRecruiterPortal(navigate, setIsMobileMenuOpen)}
               className="w-full text-left px-4 py-3 rounded-lg text-white hover:text-blue-200 font-semibold transition-all duration-200 flex items-center space-x-3 drop-shadow-md"
             >
               <Shield className="w-5 h-5" />
-              <span>Recruiter Portal</span>
+              <span>{LANDING_NAVBAR_CONSTANTS.CONTENT.RECRUITER_PORTAL}</span>
             </motion.button>
             
             <motion.button
               whileHover={{ scale: 1.02, backgroundColor: "rgba(59, 130, 246, 0.3)" }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleSignIn}
+              onClick={() => handleSignIn(setAuthMode, setShowAuthModal, setIsMobileMenuOpen)}
               className="w-full text-left px-4 py-3 rounded-lg text-white hover:text-blue-200 font-semibold transition-all duration-200 flex items-center space-x-3 drop-shadow-md"
             >
               <LogIn className="w-5 h-5" />
-              <span>Sign In</span>
+              <span>{LANDING_NAVBAR_CONSTANTS.CONTENT.SIGN_IN}</span>
             </motion.button>
             
             <motion.button
               whileHover={{ scale: 1.02, boxShadow: "0 8px 20px rgba(59, 130, 246, 0.3)" }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleSignUp}
+              onClick={() => handleSignUp(setAuthMode, setShowAuthModal, setIsMobileMenuOpen)}
               className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg shadow-lg transition-all duration-200 flex items-center justify-center space-x-3"
             >
               <UserPlus className="w-5 h-5" />
-              <span>Get Started</span>
+              <span>{LANDING_NAVBAR_CONSTANTS.CONTENT.GET_STARTED}</span>
             </motion.button>
           </div>
         </motion.div>

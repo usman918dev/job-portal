@@ -32,7 +32,10 @@ export const AppContextProvider = (props) => {
             const storedUserData = getCurrentUser();
             console.log("AppContext - Stored user data:", storedUserData); // Debug log
             
-            if (storedUserData && storedUserData.user) {
+            if (storedUserData && storedUserData.user && storedUserData.token) {
+                // Set axios authorization header
+                axios.defaults.headers.common['Authorization'] = `Bearer ${storedUserData.token}`;
+                
                 // Our normalized response has { success: true, token: "...", user: {...} }
                 const userToSet = {
                     ...storedUserData.user,
@@ -45,8 +48,25 @@ export const AppContextProvider = (props) => {
             console.error("Error initializing user from localStorage:", error);
             // Clear potentially corrupted data
             localStorage.removeItem('user');
+            localStorage.removeItem('authToken');
+            // Clear axios default header
+            delete axios.defaults.headers.common['Authorization'];
         }
     }, []);
+
+    // Set axios authorization header whenever currentUser changes
+    useEffect(() => {
+        if (currentUser) {
+            // Try to get token from localStorage
+            const storedUserData = getCurrentUser();
+            if (storedUserData && storedUserData.token) {
+                axios.defaults.headers.common['Authorization'] = `Bearer ${storedUserData.token}`;
+            }
+        } else {
+            // Clear header if no user
+            delete axios.defaults.headers.common['Authorization'];
+        }
+    }, [currentUser]);
 
     // Function to Fetch Jobs data
     const fetchJobs = async () => {
@@ -72,10 +92,15 @@ export const AppContextProvider = (props) => {
   const fetchApplications = async () => {
     try {
       if (!currentUser?.email) {
+        console.log('No user email available for fetching applications');
         return;
       }
       
-      const {data} = await axios.get(backendUrl + `/api/applications/user/${currentUser.email}`)
+      // Use email as userId (old format)
+      const userId = currentUser.email;
+      console.log('Fetching applications for email:', userId);
+      
+      const {data} = await axios.get(backendUrl + `/api/applications/user/${userId}`)
       
       if(data.success){
         console.log('Fetched applications:', data.applications);

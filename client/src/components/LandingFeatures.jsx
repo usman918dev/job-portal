@@ -1,73 +1,25 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Search, Users, Shield, Zap, Target, Globe, Award, Clock } from 'lucide-react';
+import { LANDING_FEATURES_CONSTANTS } from '../constants/landingFeaturesConstants.js';
+import { handleGetStarted } from '../utils/landingFeaturesUtils.js';
 
 const LandingFeatures = ({ setShowAuthModal, setAuthMode }) => {
-  const handleGetStarted = () => {
-    setAuthMode('Sign Up');
-    setShowAuthModal(true);
+  // Icon mapping for features
+  const iconMap = {
+    Search,
+    Users,
+    Shield,
+    Zap,
+    Target,
+    Globe
   };
 
-  const features = [
-    {
-      icon: Search,
-      title: "Smart Job Matching",
-      description: "Our AI-powered algorithm matches you with the perfect job opportunities based on your skills, experience, and preferences.",
-      color: "from-blue-500 to-cyan-500"
-    },
-    {
-      icon: Users,
-      title: "Top Companies",
-      description: "Connect with leading companies across industries. From startups to Fortune 500, find your next career opportunity.",
-      color: "from-purple-500 to-pink-500"
-    },
-    {
-      icon: Shield,
-      title: "Secure & Private",
-      description: "Your personal information is protected with enterprise-grade security. Control who sees your profile and when.",
-      color: "from-green-500 to-emerald-500"
-    },
-    {
-      icon: Zap,
-      title: "Instant Alerts",
-      description: "Get notified immediately when new jobs matching your criteria are posted. Never miss an opportunity again.",
-      color: "from-orange-500 to-red-500"
-    },
-    {
-      icon: Target,
-      title: "Career Guidance",
-      description: "Get personalized career advice and insights to help you make informed decisions about your professional journey.",
-      color: "from-indigo-500 to-purple-500"
-    },
-    {
-      icon: Globe,
-      title: "Global Opportunities",
-      description: "Explore job opportunities worldwide. Find remote work or relocate to your dream destination with ease.",
-      color: "from-teal-500 to-blue-500"
-    }
-  ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    }
-  };
+  // Map features with actual icon components
+  const features = LANDING_FEATURES_CONSTANTS.FEATURES.map(feature => ({
+    ...feature,
+    icon: iconMap[feature.icon]
+  }));
 
   return (
     <section className="py-20 lg:py-32 bg-white">
@@ -105,7 +57,7 @@ const LandingFeatures = ({ setShowAuthModal, setAuthMode }) => {
 
         {/* Features Grid */}
         <motion.div
-          variants={containerVariants}
+          variants={LANDING_FEATURES_CONSTANTS.CONTAINER_VARIANTS}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
@@ -114,7 +66,7 @@ const LandingFeatures = ({ setShowAuthModal, setAuthMode }) => {
           {features.map((feature, index) => (
             <motion.div
               key={index}
-              variants={itemVariants}
+              variants={LANDING_FEATURES_CONSTANTS.ITEM_VARIANTS}
               whileHover={{ 
                 y: -10,
                 scale: 1.02,
@@ -173,7 +125,7 @@ const LandingFeatures = ({ setShowAuthModal, setAuthMode }) => {
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(59, 130, 246, 0.3)" }}
               whileTap={{ scale: 0.95 }}
-              onClick={handleGetStarted}
+              onClick={() => handleGetStarted(setAuthMode, setShowAuthModal)}
               className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
             >
               Get Started Now

@@ -5,17 +5,26 @@ import { assets } from "../assets/assets";
 import moment from "moment";
 import Footer from "../components/Footer";
 import { AppContext } from "../context/AppContext";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, File, Briefcase, TrendingUp, Calendar, MapPin, Clock, Eye, CheckCircle, AlertCircle, User, BarChart3, Home } from "lucide-react";
+import { FileText, Briefcase, Calendar, Clock, CheckCircle, AlertCircle, BarChart3, Home,
+} from "lucide-react";
+
+// Import extracted services, utils, and constants
+import { fetchUserApplications } from "../services/applicationService";
+import { getApplicationStats, filterApplicationsByStatus } from "../utils/applicationUtils";
+import {
+  ANIMATION_VARIANTS,
+  STATUS_FILTERS,
+  getStatusConfig,
+  STATS_CONFIG
+} from "../constants/applicationConstants";
 
 const Applications = () => {
-  const { user } = useUser();
-  const { getToken } = useAuth();
   const navigate = useNavigate();
 
-  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [applications, setApplications] = useState([]);
   const [pagination, setPagination] = useState(null);
@@ -28,48 +37,11 @@ const Applications = () => {
   const fetchApplications = async (page = 1) => {
     try {
       setIsLoading(true);
-      console.log('Fetching applications for currentUser:', currentUser);
-      console.log('User email:', currentUser?.email);
-
-      if (!currentUser?.email) {
-        console.log('No user email found, skipping fetch');
-        setApplications([]);
-        setPagination(null);
-        setIsLoading(false);
-        return;
-      }
-
-      const url = `${backendUrl}/api/applications/user/${currentUser.email}?page=${page}&limit=5`;
-      console.log('Fetching from URL:', url);
-
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Received data:', data);
-
-      if (data.success) {
-        // Process applications and normalize status
-        const processedApplications = data.applications.map(app => ({
-          ...app,
-          status: app.status ?
-            app.status.charAt(0).toUpperCase() + app.status.slice(1).toLowerCase() :
-            'Pending'
-        }));
-
-        console.log('Setting applications:', processedApplications);
-        setApplications(processedApplications);
-        setPagination(data.pagination);
-      } else {
-        console.log('API returned success=false:', data.message);
-        setApplications([]);
-        setPagination(null);
-      }
+      const result = await fetchUserApplications(backendUrl, currentUser, page);
+      setApplications(result.applications);
+      setPagination(result.pagination);
     } catch (error) {
-      console.error('Error fetching applications:', error);
+      console.error("Error in fetchApplications:", error);
       setApplications([]);
       setPagination(null);
     } finally {
@@ -77,93 +49,27 @@ const Applications = () => {
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
-  };
+  const containerVariants = ANIMATION_VARIANTS.container;
+  const cardVariants = ANIMATION_VARIANTS.card;
 
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15
-      }
-    }
-  };
+  const stats = getApplicationStats(applications, pagination);
+  const filteredApplications = filterApplicationsByStatus(applications, selectedStatus);
 
-  const getStatusConfig = (status) => {
-    switch(status) {
-      case "Accepted":
-        return { 
-          bg: "bg-emerald-500/10", 
-          text: "text-emerald-400", 
-          border: "border-emerald-500/20",
-          icon: CheckCircle,
-          glow: "shadow-emerald-500/20"
-        };
-
-      default:
-        return { 
-          bg: "bg-amber-500/10", 
-          text: "text-amber-400", 
-          border: "border-amber-500/20",
-          icon: AlertCircle,
-          glow: "shadow-amber-500/20"
-        };
-    }
-  };
-
-  const getStatusStats = () => {
-    // Filter out rejected applications from stats
-    const activeApplications = applications?.filter(app => !app.status || app.status.toLowerCase() !== 'rejected') || [];
-
-    const stats = {
-      total: pagination?.totalApplications || activeApplications.length,
-      accepted: activeApplications.filter(app => app.status && app.status.toLowerCase() === 'accepted').length,
-      pending: activeApplications.filter(app => !app.status || app.status.toLowerCase() === 'pending').length
-    };
-    console.log('Application stats:', stats);
-    return stats;
-  };
-
-  const stats = getStatusStats();
-  const filteredApplications = selectedStatus === 'all' 
-    ? applications?.filter(app => !app.status || app.status.toLowerCase() !== 'rejected') || []
-    : applications?.filter(app => {
-        if (selectedStatus === 'pending') {
-          return !app.status || (app.status && app.status.toLowerCase() === 'pending');
-        }
-        return app.status && app.status.toLowerCase() === selectedStatus.toLowerCase();
-      }) || [];
-      
   // Only log in development environment
   if (import.meta.env.DEV) {
-    console.log('Current status filter:', selectedStatus);
-    console.log('Filtered applications:', filteredApplications);
+    console.log("Current status filter:", selectedStatus);
+    console.log("Filtered applications:", filteredApplications);
   }
 
-
-  
   // Fetch applications when component mounts or page changes
   useEffect(() => {
     fetchApplications(currentPage);
   }, [currentPage, currentUser?.email]);
 
-  
   // Log the applications for debugging - only in development
   useEffect(() => {
     if (import.meta.env.DEV && applications?.length > 0) {
-      console.log('All applications:', applications);
+      console.log("All applications:", applications);
     }
   }, [applications]);
 
@@ -171,14 +77,14 @@ const Applications = () => {
     <div className="min-h-screen bg-slate-900 relative overflow-hidden">
       {/* Animated background grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-20"></div>
-      
+
       {/* Floating orbs */}
       <div className="absolute top-0 left-1/4 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
       <div className="absolute bottom-0 right-1/4 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      
+
       {/* Home Button */}
       <motion.button
-        onClick={() => navigate('/')}
+        onClick={() => navigate("/")}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className="fixed top-4 left-4 z-50 flex items-center px-4 py-2 bg-slate-800/80 backdrop-blur-sm border border-slate-700/50 text-white rounded-lg hover:bg-slate-700/80 hover:border-slate-600/50 transition-all duration-300 shadow-lg"
@@ -186,65 +92,83 @@ const Applications = () => {
         <Home className="w-4 h-4 mr-2" />
         Home
       </motion.button>
-      
-      <motion.div 
+
+      <motion.div
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        <motion.div 
-          variants={cardVariants}
-          className="mb-12 text-center"
-        >
+        <motion.div variants={cardVariants} className="mb-12 text-center">
           <h1 className="text-6xl mt-20 font-bold text-white mb-4">
             Application Dashboard
           </h1>
-          <p className="text-slate-400 text-lg">Track your career journey with precision</p>
+          <p className="text-slate-400 text-lg">
+            Track your career journey with precision
+          </p>
         </motion.div>
 
         {/* Stats Grid */}
-        <motion.div 
+        <motion.div
           variants={cardVariants}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
         >
-          {[
-            { label: "Total Applications", value: stats.total, icon: Briefcase, color: "from-slate-600 to-slate-700" },
-            { label: "Accepted", value: stats.accepted, icon: CheckCircle, color: "from-emerald-600 to-emerald-700" },
-            { label: "Pending", value: stats.pending, icon: Clock, color: "from-amber-600 to-amber-700" }
-          ].map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: index * 0.1 + 0.3, type: "spring", stiffness: 100 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="group relative"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl blur-xl from-blue-600/20 to-purple-600/20"></div>
-              <div className="relative bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-all duration-300">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-slate-400 text-sm font-medium">{stat.label}</p>
-                    <p className="text-white text-3xl font-bold mt-1">{stat.value}</p>
+          {STATS_CONFIG.map((statConfig, index) => {
+            const statValue = stats[statConfig.valueKey];
+
+            return (
+              <motion.div
+                key={statConfig.label}
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{
+                  delay: index * 0.1 + 0.3,
+                  type: "spring",
+                  stiffness: 100,
+                }}
+                whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                className="group relative"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl blur-xl from-blue-600/20 to-purple-600/20"></div>
+                <div className="relative bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 hover:border-slate-600/50 transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-slate-400 text-sm font-medium">
+                        {statConfig.label}
+                      </p>
+                      <p className="text-white text-3xl font-bold mt-1">
+                        {statValue}
+                      </p>
+                    </div>
+                    <div
+                      className={`w-12 h-12 bg-gradient-to-br ${statConfig.color} rounded-lg flex items-center justify-center shadow-lg`}
+                    >
+                      <statConfig.icon className="w-6 h-6 text-white" />
+                    </div>
                   </div>
-                  <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-lg flex items-center justify-center shadow-lg`}>
-                    <stat.icon className="w-6 h-6 text-white" />
+
+                  {/* Animated progress bar */}
+                  <div className="mt-4 w-full bg-slate-700/50 rounded-full h-1.5">
+                    <motion.div
+                      className={`h-1.5 bg-gradient-to-r ${statConfig.color} rounded-full`}
+                      initial={{ width: 0 }}
+                      animate={{
+                        width: `${Math.min(
+                          (statValue / Math.max(stats.total, 1)) * 100,
+                          100
+                        )}%`,
+                      }}
+                      transition={{
+                        delay: index * 0.1 + 0.8,
+                        duration: 1.2,
+                        ease: "easeOut",
+                      }}
+                    />
                   </div>
                 </div>
-                
-                {/* Animated progress bar */}
-                <div className="mt-4 w-full bg-slate-700/50 rounded-full h-1.5">
-                  <motion.div 
-                    className={`h-1.5 bg-gradient-to-r ${stat.color} rounded-full`}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min((stat.value / Math.max(stats.total, 1)) * 100, 100)}%` }}
-                    transition={{ delay: index * 0.1 + 0.8, duration: 1.2, ease: "easeOut" }}
-                  />
-                </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </motion.div>
 
         {/* Resume Information */}
@@ -256,20 +180,23 @@ const Applications = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <div className="relative bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-600 to-transparent"></div>
-            
+
             <div className="p-6">
               <div className="flex items-center mb-4">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center mr-4 shadow-lg">
                   <FileText className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-white">Resume Information</h3>
+                  <h3 className="text-xl font-semibold text-white">
+                    Resume Information
+                  </h3>
                 </div>
               </div>
-              
+
               <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
                 <p className="text-blue-100 text-sm leading-relaxed">
-                  When you apply for a job, you will have to add your uploaded resume drive link there.
+                  When you apply for a job, you will have to add your uploaded
+                  resume drive link there.
                 </p>
               </div>
             </div>
@@ -277,14 +204,11 @@ const Applications = () => {
         </motion.div>
 
         {/* Applications Section */}
-        <motion.div
-          variants={cardVariants}
-          className="group relative"
-        >
+        <motion.div variants={cardVariants} className="group relative">
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 to-purple-600/10 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <div className="relative bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-600 to-transparent"></div>
-            
+
             <div className="p-6">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6">
                 <div className="flex items-center mb-4 lg:mb-0">
@@ -292,13 +216,15 @@ const Applications = () => {
                     <BarChart3 className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-white">Application Tracker</h3>
+                    <h3 className="text-xl font-semibold text-white">
+                      Application Tracker
+                    </h3>
                     <p className="text-slate-400">Monitor your progress</p>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {['all', 'accepted', 'pending'].map((status) => (
+                  {STATUS_FILTERS.map((status) => (
                     <motion.button
                       key={status}
                       onClick={() => {
@@ -309,8 +235,8 @@ const Applications = () => {
                       whileTap={{ scale: 0.95 }}
                       className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
                         selectedStatus === status
-                          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                          : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700/80 hover:text-white'
+                          ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                          : "bg-slate-700/50 text-slate-300 hover:bg-slate-700/80 hover:text-white"
                       }`}
                     >
                       {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -330,7 +256,11 @@ const Applications = () => {
                   >
                     <motion.div
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
                       className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full mx-auto mb-4"
                     />
                     <p className="text-slate-400">Loading applications...</p>
@@ -346,7 +276,7 @@ const Applications = () => {
                     {filteredApplications.map((job, index) => {
                       const statusConfig = getStatusConfig(job.status);
                       const StatusIcon = statusConfig.icon;
-                      
+
                       return (
                         <motion.div
                           key={job.id || index}
@@ -357,7 +287,7 @@ const Applications = () => {
                           className="group relative"
                         >
                           <div className="absolute inset-0 bg-gradient-to-r from-slate-700/20 to-slate-600/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm"></div>
-                          
+
                           <div className="relative flex items-center justify-between p-4 bg-slate-700/30 border border-slate-600/30 rounded-lg hover:bg-slate-700/50 hover:border-slate-500/50 transition-all duration-300">
                             <div className="flex items-center space-x-4 flex-1 min-w-0">
                               <div className="flex-shrink-0">
@@ -365,7 +295,7 @@ const Applications = () => {
                                   <Briefcase className="w-6 h-6 text-slate-400" />
                                 </div>
                               </div>
-                              
+
                               <div className="flex-1 min-w-0">
                                 <p className="text-white font-medium truncate">
                                   {job.jobId?.title || "Job Application"}
@@ -376,7 +306,9 @@ const Applications = () => {
                                 <div className="flex items-center text-xs text-slate-500 mt-1 space-x-4">
                                   <div className="flex items-center">
                                     <Calendar className="w-3 h-3 mr-1" />
-                                    {moment(job.createdAt).format("MMM DD, YYYY")}
+                                    {moment(job.createdAt).format(
+                                      "MMM DD, YYYY"
+                                    )}
                                   </div>
                                   {job.coverLetter && (
                                     <div className="flex items-center">
@@ -387,9 +319,11 @@ const Applications = () => {
                                 </div>
                               </div>
                             </div>
-                            
+
                             <div className="flex-shrink-0">
-                              <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border backdrop-blur-sm`}>
+                              <span
+                                className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border backdrop-blur-sm`}
+                              >
                                 <StatusIcon className="w-3 h-3 mr-1.5" />
                                 {job.status || "Pending"}
                               </span>
@@ -408,31 +342,32 @@ const Applications = () => {
                     className="text-center py-16"
                   >
                     <motion.div
-                      animate={{ 
+                      animate={{
                         y: [0, -10, 0],
-                        rotateY: [0, 180, 360]
+                        rotateY: [0, 180, 360],
                       }}
-                      transition={{ 
+                      transition={{
                         duration: 4,
                         repeat: Infinity,
-                        ease: "easeInOut"
+                        ease: "easeInOut",
                       }}
                       className="w-16 h-16 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-xl"
                     >
                       <Briefcase className="w-8 h-8 text-slate-300" />
                     </motion.div>
-                    
+
                     <h3 className="text-xl font-semibold text-white mb-2">
-                      {selectedStatus === 'all' ? 'No applications yet' : `No ${selectedStatus} applications`}
+                      {selectedStatus === "all"
+                        ? "No applications yet"
+                        : `No ${selectedStatus} applications`}
                     </h3>
                     <p className="text-slate-400 mb-8 max-w-md mx-auto">
-                      {selectedStatus === 'all' 
-                        ? 'Start your journey by applying to exciting opportunities'
-                        : `You don't have any ${selectedStatus} applications at the moment`
-                      }
+                      {selectedStatus === "all"
+                        ? "Start your journey by applying to exciting opportunities"
+                        : `You don't have any ${selectedStatus} applications at the moment`}
                     </p>
-                    
-                    <motion.button 
+
+                    <motion.button
                       whileHover={{ scale: 1.05, y: -2 }}
                       whileTap={{ scale: 0.95 }}
                       className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-blue-500/25"
@@ -454,7 +389,7 @@ const Applications = () => {
             className="mt-8 flex justify-center items-center space-x-2"
           >
             <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={!pagination.hasPrevPage}
               className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-700/50 border border-slate-600/50 rounded-lg hover:bg-slate-700/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
@@ -462,28 +397,42 @@ const Applications = () => {
             </button>
 
             <div className="flex space-x-1">
-              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                const pageNum = Math.max(1, Math.min(pagination.totalPages - 4, pagination.currentPage - 2)) + i;
-                if (pageNum > pagination.totalPages) return null;
+              {Array.from(
+                { length: Math.min(5, pagination.totalPages) },
+                (_, i) => {
+                  const pageNum =
+                    Math.max(
+                      1,
+                      Math.min(
+                        pagination.totalPages - 4,
+                        pagination.currentPage - 2
+                      )
+                    ) + i;
+                  if (pageNum > pagination.totalPages) return null;
 
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                      pageNum === pagination.currentPage
-                        ? 'text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg'
-                        : 'text-slate-300 bg-slate-700/50 border border-slate-600/50 hover:bg-slate-700/80'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                        pageNum === pagination.currentPage
+                          ? "text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg"
+                          : "text-slate-300 bg-slate-700/50 border border-slate-600/50 hover:bg-slate-700/80"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                }
+              )}
             </div>
 
             <button
-              onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+              onClick={() =>
+                setCurrentPage((prev) =>
+                  Math.min(pagination.totalPages, prev + 1)
+                )
+              }
               disabled={!pagination.hasNextPage}
               className="px-4 py-2 text-sm font-medium text-slate-300 bg-slate-700/50 border border-slate-600/50 rounded-lg hover:bg-slate-700/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
@@ -499,11 +448,12 @@ const Applications = () => {
             animate={{ opacity: 1 }}
             className="text-center mt-4 text-sm text-slate-400"
           >
-            Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalApplications} total applications)
+            Page {pagination.currentPage} of {pagination.totalPages} (
+            {pagination.totalApplications} total applications)
           </motion.div>
         )}
       </motion.div>
-      
+
       <Footer />
     </div>
   );

@@ -1,26 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Users, Zap, Shield, CheckCircle, Rocket } from 'lucide-react';
+import { LANDING_CTA_CONSTANTS } from '../constants/landingCTAConstants.js';
+import { handleGetStarted, handleSignIn } from '../utils/landingCTAUtils.js';
 
 const LandingCTA = ({ setShowAuthModal, setAuthMode }) => {
-  const handleGetStarted = () => {
-    setAuthMode('Sign Up');
-    setShowAuthModal(true);
-  };
-
-  const handleSignIn = () => {
-    setAuthMode('Login');
-    setShowAuthModal(true);
-  };
-
-  const benefits = [
-    "Access to 50,000+ job opportunities",
-    "AI-powered job matching",
-    "Direct employer connections",
-    "Career guidance and insights",
-    "Mobile app for on-the-go job hunting",
-    "Priority customer support"
-  ];
 
   return (
     <section className="py-20 lg:py-32 bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 relative overflow-hidden">
@@ -148,7 +132,7 @@ const LandingCTA = ({ setShowAuthModal, setAuthMode }) => {
             viewport={{ once: true, margin: "-50px" }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-12 lg:mb-16 will-change-transform"
           >
-            {benefits.map((benefit, index) => (
+            {LANDING_CTA_CONSTANTS.BENEFITS.map((benefit, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, x: -20 }}
@@ -198,7 +182,7 @@ const LandingCTA = ({ setShowAuthModal, setAuthMode }) => {
                 scale: 0.98,
                 transition: { duration: 0.1 }
               }}
-              onClick={handleGetStarted}
+              onClick={() => handleGetStarted(setAuthMode, setShowAuthModal)}
               className="group px-10 py-5 bg-white text-blue-600 font-bold text-lg rounded-xl shadow-2xl hover:shadow-white/25 transition-all duration-200 flex items-center space-x-3 relative overflow-hidden will-change-transform"
             >
               <motion.div
@@ -223,7 +207,7 @@ const LandingCTA = ({ setShowAuthModal, setAuthMode }) => {
                 scale: 0.98,
                 transition: { duration: 0.1 }
               }}
-              onClick={handleSignIn}
+              onClick={() => handleSignIn(setAuthMode, setShowAuthModal)}
               className="px-10 py-5 bg-white/10 backdrop-blur-sm text-white font-semibold text-lg rounded-xl border-2 border-white/30 hover:bg-white/20 hover:border-white/50 transition-all duration-200 flex items-center space-x-3 will-change-transform"
             >
               <span>Already a member? Sign In</span>

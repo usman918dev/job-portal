@@ -1,15 +1,15 @@
 import React, { useContext, useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  User, 
-  Mail, 
-  Shield, 
-  Camera, 
-  Save, 
-  Upload, 
-  CheckCircle, 
-  AlertCircle, 
-  Edit3, 
+import {
+  User,
+  Mail,
+  Shield,
+  Camera,
+  Save,
+  Upload,
+  CheckCircle,
+  AlertCircle,
+  Edit3,
   Home,
   Settings,
   Phone,
@@ -25,11 +25,31 @@ import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { 
-  updateUserProfile, 
-  saveProfileImageToStorage, 
-  getProfileImageFromStorage
+
+// Import extracted services, utils, and constants
+import {
+  updateUserProfile,
+  saveProfileImageToStorage,
+  getProfileImageFromStorage,
+  updateNotificationPreferences
 } from "../services/profileService";
+import {
+  getStatusColor,
+  getRoleIcon,
+  validateImageFile,
+  processImageFile,
+  saveUserToLocalStorage,
+  initializeFormData,
+  handleFormInputChange,
+  triggerProfileImageUpdate
+} from "../utils/profileUtils";
+import {
+  PROFILE_TABS,
+  FORM_FIELDS,
+  NOTIFICATION_PREFERENCES,
+  DEFAULT_NOTIFICATIONS,
+  ANIMATION_VARIANTS
+} from "../constants/profileConstants";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -41,22 +61,7 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isLoading, setIsLoading] = useState(false);
   
-  const [formData, setFormData] = useState({
-    name: currentUser?.name || '',
-    email: currentUser?.email || '',
-    phone: currentUser?.phone || '',
-    location: currentUser?.location || '',
-    bio: currentUser?.bio || '',
-    company: currentUser?.company || '',
-    position: currentUser?.position || '',
-    website: currentUser?.website || '',
-    notifications: {
-      email: true,
-      push: true,
-      sms: false,
-      applicationAlerts: currentUser?.notifications?.applicationAlerts !== undefined ? currentUser.notifications.applicationAlerts : true
-    }
-  });
+  const [formData, setFormData] = useState(() => initializeFormData(currentUser));
 
   // Load profile image from localStorage on component mount
   useEffect(() => {
@@ -69,62 +74,40 @@ const Profile = () => {
   }, [currentUser?.email]);
 
   // Handle profile image upload
-  const handleImageUpload = (event) => {
+  const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select a valid image file');
+    // Validate image file
+    const validation = validateImageFile(file);
+    if (!validation.isValid) {
+      toast.error(validation.error);
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size should be less than 5MB');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const imageDataUrl = e.target.result;
+    try {
+      // Process image file
+      const imageDataUrl = await processImageFile(file);
       setProfileImage(imageDataUrl);
-      
+
       // Save to localStorage with user-specific key
       const saved = saveProfileImageToStorage(currentUser?.email, imageDataUrl);
       if (saved) {
         toast.success('Profile picture updated successfully!');
-        
-        // Force navbar to update by triggering a custom event
-        window.dispatchEvent(new CustomEvent('profileImageUpdated', { 
-          detail: { userEmail: currentUser?.email, imageUrl: imageDataUrl } 
-        }));
+
+        // Trigger profile image update event
+        triggerProfileImageUpdate(currentUser?.email, imageDataUrl);
       } else {
         toast.error('Failed to save profile picture');
       }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Handle form data change
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
-    if (name.includes('notifications.')) {
-      const notificationKey = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        notifications: {
-          ...prev.notifications,
-          [notificationKey]: checked
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value
-      }));
+    } catch (error) {
+      toast.error('Failed to process image file');
+      console.error('Image processing error:', error);
     }
+  };  // Handle form data change
+  const handleInputChange = (e) => {
+    const updatedFormData = handleFormInputChange(e, formData);
+    setFormData(updatedFormData);
   };
 
   // Save profile changes
@@ -133,19 +116,17 @@ const Profile = () => {
     try {
       // In a real app, you would make an API call to update the user profile
       // For now, we'll update the context and localStorage
-      
+
       const updatedUser = {
         ...currentUser,
         ...formData
       };
-      
+
       setCurrentUser(updatedUser);
-      
-      // Save to localStorage (in a real app, this would be handled by the API)
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      userData.user = updatedUser;
-      localStorage.setItem('user', JSON.stringify(userData));
-      
+
+      // Save to localStorage
+      saveUserToLocalStorage(updatedUser);
+
       setIsEditing(false);
       toast.success('Profile updated successfully!');
     } catch (error) {
@@ -160,13 +141,10 @@ const Profile = () => {
   const handleSaveNotifications = async () => {
     setIsLoading(true);
     try {
-      // Import the function from profileService
-      const { updateNotificationPreferences } = await import('../services/profileService');
-      
       await updateNotificationPreferences(currentUser?.email, {
         applicationAlerts: formData.notifications.applicationAlerts
       });
-      
+
       // Update the context with new notification settings
       const updatedUser = {
         ...currentUser,
@@ -175,14 +153,12 @@ const Profile = () => {
           applicationAlerts: formData.notifications.applicationAlerts
         }
       };
-      
+
       setCurrentUser(updatedUser);
-      
+
       // Save to localStorage
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      userData.user = updatedUser;
-      localStorage.setItem('user', JSON.stringify(userData));
-      
+      saveUserToLocalStorage(updatedUser);
+
       toast.success('Notification preferences saved successfully!');
     } catch (error) {
       toast.error(error.message || 'Failed to save notification preferences');
@@ -192,35 +168,7 @@ const Profile = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'active':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'suspended':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getRoleIcon = (role) => {
-    switch (role?.toLowerCase()) {
-      case 'admin':
-        return <Shield className="w-4 h-4" />;
-      case 'recruiter':
-        return <Briefcase className="w-4 h-4" />;
-      default:
-        return <User className="w-4 h-4" />;
-    }
-  };
-
-  const tabs = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'preferences', label: 'Preferences', icon: Settings },
-    { id: 'notifications', label: 'Notifications', icon: Bell }
-  ];
+  const tabs = PROFILE_TABS;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
@@ -253,9 +201,10 @@ const Profile = () => {
 
           <div className="grid lg:grid-cols-4 gap-8">
             {/* Sidebar */}
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+            <motion.div
+              variants={ANIMATION_VARIANTS.tab}
+              initial="hidden"
+              animate="visible"
               className="lg:col-span-1"
             >
               <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden hover:shadow-3xl transition-all duration-500">
@@ -299,7 +248,7 @@ const Profile = () => {
                     <h3 className="text-xl font-bold text-center text-white drop-shadow-lg">{currentUser?.name}</h3>
                     <div className="flex items-center justify-center gap-2 mt-3">
                       <div className="p-1 bg-white/20 rounded-full">
-                        {getRoleIcon(currentUser?.role)}
+                        {React.createElement(getRoleIcon(currentUser?.role), { className: "w-5 h-5 text-white" })}
                       </div>
                       <span className="text-sm font-medium capitalize text-white/90 tracking-wide">{currentUser?.role}</span>
                     </div>
@@ -349,8 +298,9 @@ const Profile = () => {
 
             {/* Main Content */}
             <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
+              variants={ANIMATION_VARIANTS.content}
+              initial="hidden"
+              animate="visible"
               className="lg:col-span-3"
             >
               <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden hover:shadow-3xl transition-all duration-500">
@@ -597,63 +547,6 @@ const Profile = () => {
       </div>
 
       <Footer />
-      
-      {/* Premium CSS Animations */}
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-        
-        @keyframes shimmer {
-          0% {
-            background-position: -200px 0;
-          }
-          100% {
-            background-position: calc(200px + 100%) 0;
-          }
-        }
-        
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-        
-        .animate-shimmer {
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-          background-size: 200px 100%;
-          animation: shimmer 2s infinite;
-        }
-        
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-          width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-          background: linear-gradient(to bottom, #3b82f6, #6366f1);
-          border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(to bottom, #2563eb, #4f46e5);
-        }
-        
-        /* Glass morphism effect */
-        .glass {
-          background: rgba(255, 255, 255, 0.25);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.18);
-        }
-      `}</style>
     </div>
   );
 };

@@ -5,10 +5,25 @@ import { Key, CheckCircle, XCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { toast } from 'react-toastify';
 import { verifyResetToken, resetPassword } from '../services/authService';
 
+// Import extracted utils and constants
+import {
+  validatePasswordResetForm,
+  handlePasswordResetInputChange,
+  navigateToSigninAfterReset,
+  getPasswordRequirementsText,
+  validateResetTokenParams
+} from '../utils/resetPasswordUtils';
+import {
+  RESET_STATUS,
+  RESET_REDIRECT_DELAY,
+  ANIMATION_VARIANTS,
+  VALIDATION_MESSAGES
+} from '../constants/resetPasswordConstants';
+
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState('verifying'); // 'verifying', 'valid', 'invalid', 'success'
+  const [status, setStatus] = useState(RESET_STATUS.VERIFYING); // 'verifying', 'valid', 'invalid', 'success'
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -23,79 +38,64 @@ const ResetPassword = () => {
   const email = searchParams.get('email');
 
   useEffect(() => {
-    if (token) {
-      verifyToken();
-    } else {
-      setStatus('invalid');
-      setMessage('Invalid reset link. Missing token.');
-    }
-  }, [token]);
+    const tokenValidation = validateResetTokenParams(searchParams);
 
-  const verifyToken = async () => {
+    if (!tokenValidation.isValid) {
+      setStatus(RESET_STATUS.INVALID);
+      setMessage(tokenValidation.error);
+      return;
+    }
+
+    verifyToken(tokenValidation.token);
+  }, []);
+
+  const verifyToken = async (token) => {
     try {
-      setStatus('verifying');
-      
+      setStatus(RESET_STATUS.VERIFYING);
+
       const response = await verifyResetToken(token);
-      
+
       if (response.success) {
-        setStatus('valid');
+        setStatus(RESET_STATUS.VALID);
         setUserEmail(response.data?.email || email || '');
       }
     } catch (error) {
       console.error('Token verification error:', error);
-      setStatus('invalid');
-      setMessage(error.message || 'Invalid or expired reset token');
-      toast.error(error.message || 'Invalid or expired reset token');
+      setStatus(RESET_STATUS.INVALID);
+      setMessage(error.message || VALIDATION_MESSAGES.INVALID_TOKEN);
+      toast.error(error.message || VALIDATION_MESSAGES.INVALID_TOKEN);
     }
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const updatedFormData = handlePasswordResetInputChange(e, formData);
+    setFormData(updatedFormData);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.newPassword || !formData.confirmPassword) {
-      toast.error('Please fill in all fields');
-      return;
-    }
 
-    if (formData.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters long');
-      return;
-    }
-
-    if (formData.newPassword !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
+    // Validate form data
+    const validation = validatePasswordResetForm(formData.newPassword, formData.confirmPassword);
+    if (!validation.isValid) {
+      toast.error(validation.error);
       return;
     }
 
     try {
       setIsLoading(true);
       const response = await resetPassword(token, formData.newPassword);
-      
+
       if (response.success) {
-        setStatus('success');
+        setStatus(RESET_STATUS.SUCCESS);
         setMessage(response.message);
         toast.success('Password reset successfully!');
-        
-        // Redirect to sign in after 3 seconds
-        setTimeout(() => {
-          navigate('/signin', { 
-            state: { 
-              message: 'Password reset successfully! You can now sign in with your new password.',
-              email: userEmail
-            }
-          });
-        }, 3000);
+
+        // Redirect to sign in after specified delay
+        navigateToSigninAfterReset(navigate, userEmail, RESET_REDIRECT_DELAY);
       }
     } catch (error) {
-      toast.error(error.message || 'Failed to reset password');
+      toast.error(error.message || VALIDATION_MESSAGES.RESET_FAILED);
     } finally {
       setIsLoading(false);
     }
@@ -104,17 +104,17 @@ const ResetPassword = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        variants={ANIMATION_VARIANTS.container}
+        initial="hidden"
+        animate="visible"
         className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden"
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-8 text-center">
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            variants={ANIMATION_VARIANTS.headerIcon}
+            initial="hidden"
+            animate="visible"
             className="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4"
           >
             <Key className="w-8 h-8 text-white" />
@@ -125,7 +125,7 @@ const ResetPassword = () => {
 
         {/* Content */}
         <div className="px-6 py-8">
-          {status === 'verifying' && (
+          {status === RESET_STATUS.VERIFYING && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -133,8 +133,8 @@ const ResetPassword = () => {
             >
               <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
                 <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  variants={ANIMATION_VARIANTS.loadingSpinner}
+                  animate="animate"
                   className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"
                 />
               </div>
@@ -143,11 +143,11 @@ const ResetPassword = () => {
             </motion.div>
           )}
 
-          {status === 'valid' && (
+          {status === RESET_STATUS.VALID && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
+              variants={ANIMATION_VARIANTS.content}
+              initial="hidden"
+              animate="visible"
             >
               <div className="text-center mb-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-2">Create New Password</h2>
@@ -210,7 +210,7 @@ const ResetPassword = () => {
                 </div>
 
                 <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-                  <p>Password must be at least 6 characters long</p>
+                  <p>{getPasswordRequirementsText()}</p>
                 </div>
 
                 <motion.button
@@ -223,8 +223,8 @@ const ResetPassword = () => {
                   {isLoading ? (
                     <>
                       <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        variants={ANIMATION_VARIANTS.buttonSpinner}
+                        animate="animate"
                         className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
                       />
                       Resetting...
@@ -237,7 +237,7 @@ const ResetPassword = () => {
             </motion.div>
           )}
 
-          {status === 'success' && (
+          {status === RESET_STATUS.SUCCESS && (
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -261,17 +261,47 @@ const ResetPassword = () => {
                 </motion.button>
                 
                 <p className="text-sm text-gray-500">
-                  Redirecting automatically in 3 seconds...
+                  Redirecting automatically in {RESET_REDIRECT_DELAY / 1000} seconds...
                 </p>
               </div>
             </motion.div>
           )}
 
-          {status === 'invalid' && (
+          {status === RESET_STATUS.SUCCESS && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
+              variants={ANIMATION_VARIANTS.content}
+              initial="hidden"
+              animate="visible"
+              className="text-center"
+            >
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-2">Password Reset Successful!</h2>
+              <p className="text-gray-600 mb-6">{message}</p>
+
+              <div className="space-y-3">
+                <motion.button
+                  onClick={() => navigate('/signin')}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  Continue to Sign In
+                </motion.button>
+
+                <p className="text-sm text-gray-500">
+                  Redirecting automatically in {RESET_REDIRECT_DELAY / 1000} seconds...
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {status === RESET_STATUS.INVALID && (
+            <motion.div
+              variants={ANIMATION_VARIANTS.content}
+              initial="hidden"
+              animate="visible"
               className="text-center"
             >
               <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
@@ -279,7 +309,7 @@ const ResetPassword = () => {
               </div>
               <h2 className="text-xl font-semibold text-gray-800 mb-2">Invalid Reset Link</h2>
               <p className="text-gray-600 mb-6">{message}</p>
-              
+
               <div className="space-y-3">
                 <motion.button
                   onClick={() => navigate('/signin')}
@@ -289,7 +319,7 @@ const ResetPassword = () => {
                 >
                   Request New Reset Link
                 </motion.button>
-                
+
                 <motion.button
                   onClick={() => navigate('/')}
                   whileHover={{ scale: 1.02 }}

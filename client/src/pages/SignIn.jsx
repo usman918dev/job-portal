@@ -6,53 +6,54 @@ import { toast } from "react-toastify";
 import { login } from "../services/authService";
 import { AppContext } from "../context/AppContext";
 import bgimage from "../assets/bg-image-main.jpg";
+import {
+  DEFAULT_FORM_STATE,
+  ANIMATION_VARIANTS,
+  USER_ROLES,
+  ROUTES,
+  STYLING
+} from "../constants/signInPageConstants";
+import {
+  validateSignInPageForm,
+  handleSignInPageInputChange,
+  navigateAfterSignIn,
+  isUserAuthenticated,
+  getRoleButtonClasses,
+  getInputClasses
+} from "../utils/signInPageUtils";
 
 const SignIn = () => {
   const navigate = useNavigate();
   const { setCurrentUser, currentUser } = useContext(AppContext);
   
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    role: "user"
-  });
+  const [formData, setFormData] = useState(DEFAULT_FORM_STATE);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   // Redirect if already logged in
   useEffect(() => {
-    if (currentUser) {
-      navigate("/");
+    if (isUserAuthenticated(currentUser)) {
+      navigate(ROUTES.HOME);
     }
   }, [currentUser, navigate]);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear errors when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
-    }
+    const { formData: updatedFormData, errors: updatedErrors } = handleSignInPageInputChange(
+      field,
+      value,
+      formData,
+      errors
+    );
+
+    setFormData(updatedFormData);
+    setErrors(updatedErrors);
   };
 
   const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-    
-    if (!formData.password.trim()) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const validation = validateSignInPageForm(formData);
+    setErrors(validation.errors);
+    return validation.isValid;
   };
 
   const handleSubmit = async (e) => {
@@ -75,11 +76,7 @@ const SignIn = () => {
       toast.success("Login successful! Welcome back.");
       
       // Navigate based on role
-      if (formData.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      }
+      navigateAfterSignIn(navigate, formData.role);
       
     } catch (error) {
       console.error("Login error:", error);
@@ -106,8 +103,8 @@ const SignIn = () => {
         <div className="w-full max-w-md">
           {/* Back Button */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={ANIMATION_VARIANTS.backButton.initial}
+            animate={ANIMATION_VARIANTS.backButton.animate}
             className="mb-8"
           >
             <Link
@@ -121,18 +118,16 @@ const SignIn = () => {
 
           {/* Sign In Card */}
           <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.6, type: "spring", damping: 20 }}
+            initial={ANIMATION_VARIANTS.card.initial}
+            animate={ANIMATION_VARIANTS.card.animate}
+            transition={ANIMATION_VARIANTS.card.transition}
             className="relative"
           >
             {/* Glow effect - same as Hero search form */}
             <motion.div
               className="absolute -inset-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-400 rounded-3xl blur-lg opacity-25"
-              animate={{
-                scale: [1, 1.02, 1],
-              }}
-              transition={{ duration: 3, repeat: Infinity }}
+              animate={ANIMATION_VARIANTS.glowEffect.animate}
+              transition={ANIMATION_VARIANTS.glowEffect.transition}
             />
             
             <div className="relative bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/20">
@@ -171,35 +166,27 @@ const SignIn = () => {
                     <div className="grid grid-cols-2 gap-3">
                       <motion.button
                         type="button"
-                        onClick={() => handleInputChange("role", "user")}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
-                          formData.role === "user"
-                            ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md shadow-blue-100"
-                            : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
-                        }`}
+                        onClick={() => handleInputChange("role", USER_ROLES.USER)}
+                        whileHover={ANIMATION_VARIANTS.roleButton.hover}
+                        whileTap={ANIMATION_VARIANTS.roleButton.tap}
+                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${getRoleButtonClasses(USER_ROLES.USER, formData.role)}`}
                       >
                         <User size={16} />
                         <span className="font-medium">User</span>
-                        {formData.role === "user" && (
+                        {formData.role === USER_ROLES.USER && (
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                         )}
                       </motion.button>
                       <motion.button
                         type="button"
-                        onClick={() => handleInputChange("role", "admin")}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
-                          formData.role === "admin"
-                            ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md shadow-blue-100"
-                            : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:bg-gray-100"
-                        }`}
+                        onClick={() => handleInputChange("role", USER_ROLES.ADMIN)}
+                        whileHover={ANIMATION_VARIANTS.roleButton.hover}
+                        whileTap={ANIMATION_VARIANTS.roleButton.tap}
+                        className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all duration-200 ${getRoleButtonClasses(USER_ROLES.ADMIN, formData.role)}`}
                       >
                         <Shield size={16} />
                         <span className="font-medium">Admin</span>
-                        {formData.role === "admin" && (
+                        {formData.role === USER_ROLES.ADMIN && (
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                         )}
                       </motion.button>
@@ -214,11 +201,7 @@ const SignIn = () => {
                     </label>
                     <input
                       id="email"
-                      className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-700 focus:outline-none focus:ring-2 transition-all placeholder:text-gray-400 ${
-                        errors.email 
-                          ? "border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50" 
-                          : "border-gray-200 focus:ring-blue-500 focus:border-transparent"
-                      }`}
+                      className={getInputClasses(!!errors.email)}
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       type="email"
@@ -242,11 +225,7 @@ const SignIn = () => {
                     <div className="relative">
                       <input
                         id="password"
-                        className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-700 focus:outline-none focus:ring-2 transition-all placeholder:text-gray-400 pr-12 ${
-                          errors.password 
-                            ? "border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50" 
-                            : "border-gray-200 focus:ring-blue-500 focus:border-transparent"
-                        }`}
+                        className={`${getInputClasses(!!errors.password)} pr-12`}
                         value={formData.password}
                         onChange={(e) => handleInputChange("password", e.target.value)}
                         type={showPassword ? "text" : "password"}
@@ -283,9 +262,9 @@ const SignIn = () => {
                   <motion.button
                     type="submit"
                     disabled={isLoading}
-                    whileHover={{ scale: isLoading ? 1 : 1.02 }}
-                    whileTap={{ scale: isLoading ? 1 : 0.98 }}
-                    className="relative w-full py-4 font-semibold text-white transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden group"
+                    whileHover={isLoading ? ANIMATION_VARIANTS.submitButton.disabled : ANIMATION_VARIANTS.submitButton.hover}
+                    whileTap={isLoading ? ANIMATION_VARIANTS.submitButton.disabled : ANIMATION_VARIANTS.submitButton.tap}
+                    className={STYLING.button.primary}
                   >
                     {/* Button background effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-700 to-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
@@ -301,9 +280,9 @@ const SignIn = () => {
                           <span>Sign In</span>
                           <motion.div
                             className="ml-2"
-                            initial={{ x: 0 }}
-                            whileHover={{ x: 4 }}
-                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                            initial={ANIMATION_VARIANTS.arrow.initial}
+                            whileHover={ANIMATION_VARIANTS.arrow.whileHover}
+                            transition={ANIMATION_VARIANTS.arrow.transition}
                           >
                             →
                           </motion.div>
@@ -321,7 +300,7 @@ const SignIn = () => {
                     Don't have an account?{" "}
                     <button
                       type="button"
-                      onClick={() => navigate("/")} // Navigate to home where they can open sign up modal
+                      onClick={() => navigate(ROUTES.HOME)} // Navigate to home where they can open sign up modal
                       className="font-medium text-blue-600 hover:text-blue-800 transition-colors"
                     >
                       Sign up now

@@ -3,6 +3,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { Zap, Briefcase, User, LogOut, Shield } from "lucide-react";
 import { logout } from "../services/authService";
+import { NAVBAR_CONSTANTS } from "../constants/navbarConstants.js";
+import {
+  openAuthModal,
+  createScrollHandler,
+  loadProfileImage,
+  createProfileImageUpdateHandler,
+  createClickOutsideHandler,
+  handleLogout,
+  isAdmin,
+  isDevelopment
+} from "../utils/navbarUtils.js";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -11,55 +22,31 @@ const Navbar = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
 
-  const openAuthModal = (mode = "Sign Up") => {
-    // We can pass the mode through a custom event or context
-    setShowAuthModal(true);
-  };
-
   // Load profile image from localStorage
   useEffect(() => {
-    if (currentUser?.email) {
-      const savedImage = localStorage.getItem(`profileImage_${currentUser.email}`);
-      if (savedImage) {
-        setProfileImage(savedImage);
-      }
+    const savedImage = loadProfileImage(currentUser);
+    if (savedImage) {
+      setProfileImage(savedImage);
     }
   }, [currentUser?.email]);
 
   // Listen for profile image updates
   useEffect(() => {
-    const handleProfileImageUpdate = (event) => {
-      if (event.detail.userEmail === currentUser?.email) {
-        setProfileImage(event.detail.imageUrl);
-      }
-    };
-
-    window.addEventListener('profileImageUpdated', handleProfileImageUpdate);
-    return () => window.removeEventListener('profileImageUpdated', handleProfileImageUpdate);
+    const handleProfileImageUpdate = createProfileImageUpdateHandler(currentUser, setProfileImage);
+    window.addEventListener(NAVBAR_CONSTANTS.CUSTOM_EVENTS.PROFILE_IMAGE_UPDATED, handleProfileImageUpdate);
+    return () => window.removeEventListener(NAVBAR_CONSTANTS.CUSTOM_EVENTS.PROFILE_IMAGE_UPDATED, handleProfileImageUpdate);
   }, [currentUser?.email]);
 
   // Handle scroll event
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 50) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-    };
-
+    const handleScroll = createScrollHandler(setScrolled);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Handle click outside to close user menu
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showUserMenu && !event.target.closest('.user-menu-container')) {
-        setShowUserMenu(false);
-      }
-    };
-
+    const handleClickOutside = createClickOutsideHandler(showUserMenu, setShowUserMenu);
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showUserMenu]);
@@ -77,7 +64,7 @@ const Navbar = () => {
         } flex justify-between items-center`}>
           {/* Jobly Logo */}
           <div 
-            onClick={() => navigate("/")} 
+            onClick={() => navigate(NAVBAR_CONSTANTS.ROUTES.HOME)} 
             className="flex items-center gap-2 cursor-pointer group"
           >
             <div className={`bg-gradient-to-br from-emerald-600 to-blue-800 p-2 rounded-lg ${scrolled ? 'shadow-lg' : ''} group-hover:shadow-emerald-500/30 transition-all duration-300`}>
@@ -93,9 +80,9 @@ const Navbar = () => {
             {currentUser ? (
               <>
                 {/* My Jobs - only show for non-admin users */}
-                {!(currentUser?.role === 'admin' || currentUser?.role === 'Admin') && (
+                {!isAdmin(currentUser) && (
                   <Link 
-                    to="/applications" 
+                    to={NAVBAR_CONSTANTS.ROUTES.APPLICATIONS} 
                     className="hidden md:flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-all duration-200 px-4 py-2 rounded-lg hover:bg-blue-50"
                   >
                     <Briefcase size={18} />
@@ -104,9 +91,9 @@ const Navbar = () => {
                 )}
                 
                 {/* Admin Dashboard - only show for admin users */}
-                {(currentUser?.role === 'admin' || currentUser?.role === 'Admin') && (
+                {isAdmin(currentUser) && (
                   <Link
-                    to="/admin"
+                    to={NAVBAR_CONSTANTS.ROUTES.ADMIN}
                     className="hidden md:flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-all duration-200 px-4 py-2 rounded-lg hover:bg-blue-50"
                   >
                     <Shield size={18} />
@@ -115,7 +102,7 @@ const Navbar = () => {
                 )}
                 
                 {/* Debug info - remove in production */}
-                {process.env.NODE_ENV === 'development' && (
+                {isDevelopment() && (
                   <div className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
                     Role: {currentUser?.role || 'undefined'}
                   </div>
@@ -156,7 +143,7 @@ const Navbar = () => {
                         </span>
                       </div>
                       <Link
-                        to="/profile"
+                        to={NAVBAR_CONSTANTS.ROUTES.PROFILE}
                         className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
                         onClick={() => setShowUserMenu(false)}
                       >
@@ -164,12 +151,7 @@ const Navbar = () => {
                         Profile Settings
                       </Link>
                       <button
-                        onClick={() => {
-                          logout(); // Clear localStorage
-                          setCurrentUser(null); // Clear context
-                          setShowUserMenu(false);
-                          navigate("/"); // Redirect to home
-                        }}
+                        onClick={() => handleLogout(logout, setCurrentUser, setShowUserMenu, navigate)}
                         className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 transition-colors w-full text-left"
                       >
                         <LogOut size={16} />
@@ -182,7 +164,7 @@ const Navbar = () => {
             ) : (
               <>
                 <button
-                  onClick={() => navigate("/admin")}
+                  onClick={() => navigate(NAVBAR_CONSTANTS.ROUTES.ADMIN)}
                   className="hidden md:block text-sm font-medium text-gray-600 hover:text-blue-600 transition-all duration-200 px-4 py-2 rounded-lg hover:bg-blue-50"
                 >
                   Recruiter Portal
@@ -199,24 +181,6 @@ const Navbar = () => {
           </div>
         </nav>
       </div>
-
-      {/* Add this to your tailwind.config.js or CSS file */}
-      <style jsx>{`
-        @keyframes slideDown {
-          from {
-            transform: translateY(-100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-        
-        .animate-slideDown {
-          animation: slideDown 0.4s ease-out forwards;
-        }
-      `}</style>
     </>
   );
 };
