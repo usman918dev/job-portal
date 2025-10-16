@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000/api/auth';
+const BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const API_URL = `${BASE_URL}/api/auth`;
 
 export const register = async (userData) => {
   try {
@@ -18,7 +19,7 @@ export const register = async (userData) => {
       requestData.companyName = userData.companyName;
     }
 
-    const response = await axios.post('http://localhost:5000/api/auth/signup', requestData);
+    const response = await axios.post(`${API_URL}/signup`, requestData);
     
     console.log("Registration API response:", response.data); // Debug log
     
@@ -42,7 +43,7 @@ export const login = async (credentials) => {
   try {
     console.log("Attempting login with:", { email: credentials.email, role: credentials.role }); // Debug log
     
-    const response = await axios.post('http://localhost:5000/api/auth/signin', {
+    const response = await axios.post(`${API_URL}/signin`, {
       email: credentials.email,
       password: credentials.password,
       role: credentials.role
@@ -156,7 +157,7 @@ export const isAdmin = () => {
 // Password reset functions
 export const forgotPassword = async (email) => {
   try {
-    const response = await axios.post('http://localhost:5000/api/auth/forgot-password', {
+    const response = await axios.post(`${API_URL}/forgot-password`, {
       email
     });
     
@@ -169,7 +170,7 @@ export const forgotPassword = async (email) => {
 
 export const verifyResetToken = async (token) => {
   try {
-    const response = await axios.post('http://localhost:5000/api/auth/verify-reset-token', {
+    const response = await axios.post(`${API_URL}/verify-reset-token`, {
       token
     });
     
@@ -182,7 +183,7 @@ export const verifyResetToken = async (token) => {
 
 export const resetPassword = async (token, newPassword) => {
   try {
-    const response = await axios.post('http://localhost:5000/api/auth/reset-password', {
+    const response = await axios.post(`${API_URL}/reset-password`, {
       token,
       newPassword
     });

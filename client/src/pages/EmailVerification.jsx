@@ -5,7 +5,7 @@ import { CheckCircle, XCircle, Mail, RefreshCw, ArrowLeft } from "lucide-react";
 import { toast } from "react-toastify";
 
 // Import extracted services, utils, and constants
-import { verifyEmail, resendVerificationEmail } from "../services/authService";
+import { verifyEmail as verifyEmailService, resendVerificationEmail } from "../services/authService";
 import { decodeEmail, navigateToSigninAfterVerification, getBackendUrl } from "../utils/emailVerificationUtils";
 import { VERIFICATION_STATUS, VERIFICATION_REDIRECT_DELAY } from "../constants/emailVerificationConstants";
 
@@ -22,18 +22,18 @@ const EmailVerification = () => {
 
   useEffect(() => {
     if (token && email) {
-      verifyEmail();
+      handleVerifyEmail();
     } else {
       setVerificationStatus(VERIFICATION_STATUS.ERROR);
       setMessage("Invalid verification link. Missing token or email.");
     }
   }, [token, email]);
 
-  const verifyEmail = async () => {
+  const handleVerifyEmail = async () => {
     try {
       setVerificationStatus(VERIFICATION_STATUS.VERIFYING);
 
-      const response = await verifyEmail(token, email);
+      const response = await verifyEmailService(token, email);
 
       if (response.success) {
         setVerificationStatus(VERIFICATION_STATUS.SUCCESS);
