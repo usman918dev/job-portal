@@ -11,7 +11,8 @@ export const createJob = async (jobData, userId) => {
     experience,
     deadline,
     description,
-    requirements
+    requirements,
+    skills
   } = jobData;
 
   // Basic validation
@@ -58,6 +59,7 @@ export const createJob = async (jobData, userId) => {
     deadline,
     description,
     requirements,
+    skills: skills || [], // Include skills array
     createdBy: userId // Link job to admin who created it
   });
 
@@ -79,7 +81,8 @@ export const getJobs = async (page = 1, limit = 10, searchQuery = '') => {
       { location: regex },
       { description: regex },
       { requirements: regex },
-      { jobType: regex }
+      { jobType: regex },
+      { skills: regex } // Include skills in search
     ];
   }
 
@@ -171,7 +174,8 @@ export const updateJob = async (jobId, jobData, userId) => {
     experience,
     deadline,
     description,
-    requirements
+    requirements,
+    skills
   } = jobData;
 
   // Basic validation
@@ -230,7 +234,8 @@ export const updateJob = async (jobId, jobData, userId) => {
       experience,
       deadline,
       description,
-      requirements
+      requirements,
+      skills: skills || [] // Include skills array
     },
     { new: true, runValidators: true }
   );

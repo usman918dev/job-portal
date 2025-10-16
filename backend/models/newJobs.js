@@ -40,6 +40,16 @@ const jobSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  skills: {
+    type: [String],
+    default: [],
+    validate: {
+      validator: function(skills) {
+        return skills.length <= 20; // Max 20 skills
+      },
+      message: 'Maximum 20 skills allowed'
+    }
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

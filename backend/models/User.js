@@ -79,6 +79,42 @@ const userSchema = new mongoose.Schema({
       type: Boolean,
       default: true
     }
+  },
+  // Professional profile fields
+  phone: {
+    type: String,
+    trim: true
+  },
+  location: {
+    type: String,
+    trim: true
+  },
+  company: {
+    type: String,
+    trim: true
+  },
+  position: {
+    type: String,
+    trim: true
+  },
+  website: {
+    type: String,
+    trim: true
+  },
+  bio: {
+    type: String,
+    trim: true,
+    maxlength: [500, 'Bio cannot exceed 500 characters']
+  },
+  skills: {
+    type: [String],
+    default: [],
+    validate: {
+      validator: function(skills) {
+        return skills.length <= 50; // Maximum 50 skills
+      },
+      message: 'You cannot add more than 50 skills'
+    }
   }
 });
 

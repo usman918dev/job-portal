@@ -20,7 +20,8 @@ export const createJob = async (req, res) => {
       experience,
       deadline,
       description,
-      requirements
+      requirements,
+      skills
     } = req.body;
 
     // Get admin user from request (set by auth middleware)
@@ -37,7 +38,8 @@ export const createJob = async (req, res) => {
       experience,
       deadline,
       description,
-      requirements
+      requirements,
+      skills
     }, req.user._id);
 
     res.status(201).json(savedJob);
@@ -135,7 +137,8 @@ export const updateJob = async (req, res) => {
     experience,
     deadline,
     description,
-    requirements
+    requirements,
+    skills
   } = req.body;
 
   try {
@@ -152,7 +155,8 @@ export const updateJob = async (req, res) => {
       experience,
       deadline,
       description,
-      requirements
+      requirements,
+      skills
     }, req.user._id);
 
     return res.status(200).json(updatedJob);
