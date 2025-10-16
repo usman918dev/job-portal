@@ -23,6 +23,7 @@ import {
 } from "react-icons/fi";
 import adminData from "../../data/adminData";
 import api from "../../services/api";
+import SkillsInput from "../../components/SkillsInput";
 
 const JobForm = ({ onClose, editingJob = null }) => {
   const [title, setTitle] = useState(editingJob?.title || "");
@@ -41,6 +42,7 @@ const JobForm = ({ onClose, editingJob = null }) => {
   const [requirements, setRequirements] = useState(
     editingJob?.requirements || ""
   );
+  const [skills, setSkills] = useState(editingJob?.skills || []);
   const [errors, setErrors] = useState({});
 
   // Get today's date in YYYY-MM-DD format
@@ -184,6 +186,7 @@ const JobForm = ({ onClose, editingJob = null }) => {
       deadline,
       description: description.trim(),
       requirements: requirements.trim(),
+      skills: skills, // Add skills to the job data
     };
 
     try {
@@ -376,6 +379,18 @@ const JobForm = ({ onClose, editingJob = null }) => {
             {requirements.length}/3000 characters (minimum 50)
           </p>
         </FormGroup>
+
+        {/* Skills Input */}
+        <FormGroup label="Required Skills" className="md:col-span-2">
+          <SkillsInput
+            skills={skills}
+            onChange={setSkills}
+            maxSkills={20}
+          />
+          {errors.skills && (
+            <p className="text-xs text-red-500 mt-1">{errors.skills}</p>
+          )}
+        </FormGroup>
       </div>
 
       <div className="flex justify-end space-x-3 mt-6">
@@ -429,6 +444,7 @@ const ManageJobs = () => {
           deadline: jobToEdit.deadline,
           description: jobToEdit.description,
           requirements: jobToEdit.requirements,
+          skills: jobToEdit.skills || [], // Include skills
         };
         setEditingJob(transformedJob);
         setShowForm(true);

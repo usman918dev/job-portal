@@ -19,15 +19,18 @@ import "quill/dist/quill.snow.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { setAuthToken } from "./services/api";
+import JobListing from "./pages/Jobs";
+import Jobs from "./pages/Jobs";
 
 const App = () => {
-  const { showAuthModal, setShowAuthModal, setCurrentUser, currentUser } = useContext(AppContext);
+  const { showAuthModal, setShowAuthModal, setCurrentUser, currentUser } =
+    useContext(AppContext);
   const [authMode, setAuthMode] = React.useState("Sign Up");
   const navigate = useNavigate();
 
   // Initialize auth token on app load
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem("authToken");
     if (token) {
       setAuthToken(token);
     }
@@ -35,44 +38,46 @@ const App = () => {
 
   // Simple authentication check
   const isAuthenticated = () => {
-    return currentUser !== null && currentUser !== undefined && currentUser.email;
+    return (
+      currentUser !== null && currentUser !== undefined && currentUser.email
+    );
   };
 
   const handleLogin = (userData) => {
-    console.log('handleLogin called with userData:', userData);
-    
+    console.log("handleLogin called with userData:", userData);
+
     // Add null checks before setting user data
     if (userData) {
-      console.log('User logged in:', userData);
-      
+      console.log("User logged in:", userData);
+
       // Ensure we have at least basic user structure
-      const userToSet = { 
+      const userToSet = {
         ...userData,
-        role: userData.role || 'user', // Default role if missing
-        name: userData.name || userData.email?.split('@')[0] || 'User',
-        email: userData.email || '',
-        companyName: userData.companyName
+        role: userData.role || "user", // Default role if missing
+        name: userData.name || userData.email?.split("@")[0] || "User",
+        email: userData.email || "",
+        companyName: userData.companyName,
       };
-      
-      console.log('Setting currentUser to:', userToSet);
+
+      console.log("Setting currentUser to:", userToSet);
       setCurrentUser(userToSet);
-      
+
       // Close auth modal and redirect based on role
       setShowAuthModal(false);
-      
-      const adminRoles = ['admin', 'Admin', 'Recruiter'];
+
+      const adminRoles = ["admin", "Admin", "Recruiter"];
       if (adminRoles.includes(userToSet.role)) {
-        console.log('Admin user logged in, redirecting to admin dashboard');
+        console.log("Admin user logged in, redirecting to admin dashboard");
         // Remove old session storage approach
-        sessionStorage.removeItem('adminAuth');
-        sessionStorage.removeItem('adminUser');
+        sessionStorage.removeItem("adminAuth");
+        sessionStorage.removeItem("adminUser");
         // Redirect to admin dashboard
-        navigate('/admin');
+        navigate("/admin");
       } else {
-        navigate('/');
+        navigate("/");
       }
     } else {
-      console.error('handleLogin called with undefined userData');
+      console.error("handleLogin called with undefined userData");
     }
   };
 
@@ -92,18 +97,21 @@ const App = () => {
           <Route path="/verify-email" element={<EmailVerification />} />
           {/* Password reset route accessible to unauthenticated users */}
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="*" element={
-            <LandingPage 
-              onLogin={handleLogin}
-              authMode={authMode}
-              setAuthMode={setAuthMode}
-              showAuthModal={showAuthModal}
-              setShowAuthModal={setShowAuthModal}
-              handleAuthModalClose={handleAuthModalClose}
-            />
-          } />
+          <Route
+            path="*"
+            element={
+              <LandingPage
+                onLogin={handleLogin}
+                authMode={authMode}
+                setAuthMode={setAuthMode}
+                showAuthModal={showAuthModal}
+                setShowAuthModal={setShowAuthModal}
+                handleAuthModalClose={handleAuthModalClose}
+              />
+            }
+          />
         </Routes>
-        <ToastContainer 
+        <ToastContainer
           position="bottom-right"
           autoClose={3000}
           hideProgressBar={false}
@@ -122,14 +130,14 @@ const App = () => {
   // Authenticated users can access all routes
   return (
     <div>
-      <AuthModal 
-        isOpen={showAuthModal} 
+      <AuthModal
+        isOpen={showAuthModal}
         onClose={handleAuthModalClose}
         onLogin={handleLogin}
         initialMode={authMode}
         canClose={true} // Allow closing when already authenticated
       />
-      <ToastContainer 
+      <ToastContainer
         position="bottom-right"
         autoClose={3000}
         hideProgressBar={false}
@@ -145,10 +153,18 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/verify-email" element={<EmailVerification />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/apply-job/:id" element={<div style={{padding:'2rem'}}>Job detail page is being rebuilt. Please check back soon.</div>} />
+        <Route
+          path="/apply-job/:id"
+          element={
+            <div style={{ padding: "2rem" }}>
+              Job detail page is being rebuilt. Please check back soon.
+            </div>
+          }
+        />
         <Route path="/applications" element={<Applications />} />
         <Route path="/profile" element={<Profile />} />
-        
+        <Route path="/latest-jobs" element={<Jobs />} />
+
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />

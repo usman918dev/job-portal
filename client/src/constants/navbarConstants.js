@@ -6,6 +6,8 @@ export const NAVBAR_CONSTANTS = {
   // Navigation routes
   ROUTES: {
     HOME: '/',
+    JOBS: '/jobs',
+    LATEST_JOBS: '/latest-jobs',
     APPLICATIONS: '/applications',
     ADMIN: '/admin',
     PROFILE: '/profile'

@@ -2,7 +2,7 @@ export const JOB_LISTING_CONSTANTS = {
   // Pagination settings
   PAGINATION: {
     JOBS_PER_PAGE: 9,
-    MAX_PAGE_BUTTONS: 5,
+    MAX_PAGE_BUTTONS: 3,
   },
 
   // Animation configurations

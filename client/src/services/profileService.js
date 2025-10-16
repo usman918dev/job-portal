@@ -30,7 +30,7 @@ export const getUserProfile = async (userId) => {
 // Update user profile
 export const updateUserProfile = async (userId, profileData) => {
   try {
-    const response = await axios.put(`${BASE_URL}/api/users/${userId}`, profileData, {
+    const response = await axios.put(`${BASE_URL}/api/auth/profile/${userId}`, profileData, {
       headers: getAuthHeaders()
     });
     return response.data;

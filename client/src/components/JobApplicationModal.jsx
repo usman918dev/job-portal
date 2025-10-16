@@ -71,8 +71,7 @@ const JobApplicationModal = ({ isOpen, onClose, jobDetails }) => {
     if (!isValidFileType(file)) {
       setErrors((prev) => ({
         ...prev,
-        resume:
-          JOB_APPLICATION_MODAL_CONSTANTS.ERRORS.FILE_TYPE_INVALID,
+        resume: JOB_APPLICATION_MODAL_CONSTANTS.ERRORS.FILE_TYPE_INVALID,
       }));
       return;
     }
@@ -101,13 +100,14 @@ const JobApplicationModal = ({ isOpen, onClose, jobDetails }) => {
         setUploadProgress(progress);
       });
 
-      console.log('Upload result:', result); // Debug log
-      
+      console.log("Upload result:", result); // Debug log
+
       // Extract URL from response - handle different response structures
-      const uploadedUrl = result.data?.data?.url || result.data?.url || result.url;
-      
+      const uploadedUrl =
+        result.data?.data?.url || result.data?.url || result.url;
+
       if (!uploadedUrl) {
-        throw new Error('No URL returned from upload');
+        throw new Error("No URL returned from upload");
       }
 
       setUploadedFile({
@@ -116,9 +116,7 @@ const JobApplicationModal = ({ isOpen, onClose, jobDetails }) => {
         url: uploadedUrl,
       });
 
-      toast.success(
-        JOB_APPLICATION_MODAL_CONSTANTS.SUCCESS.UPLOAD_SUCCESS
-      );
+      toast.success(JOB_APPLICATION_MODAL_CONSTANTS.SUCCESS.UPLOAD_SUCCESS);
     } catch (error) {
       console.error("Upload error:", error);
       toast.error(JOB_APPLICATION_MODAL_CONSTANTS.ERRORS.UPLOAD_FAILED);
@@ -150,10 +148,10 @@ const JobApplicationModal = ({ isOpen, onClose, jobDetails }) => {
     try {
       // Validate jobDetails and extract job ID
       const jobId = jobDetails?._id || jobDetails?.id || jobDetails?.jobId;
-      
+
       if (!jobId) {
-        toast.error('Invalid job details. Please try again.');
-        console.error('Missing job ID. Job details:', jobDetails);
+        toast.error("Invalid job details. Please try again.");
+        console.error("Missing job ID. Job details:", jobDetails);
         return;
       }
 
@@ -164,23 +162,21 @@ const JobApplicationModal = ({ isOpen, onClose, jobDetails }) => {
         availableFrom: formData.availableFrom,
       };
 
-      console.log('Submitting application data:', applicationData);
-      console.log('Job details:', jobDetails);
-      console.log('Current user:', currentUser);
-      
-      const response = await submitApplication(applicationData);
-      
-      console.log('Application submitted successfully:', response);
+      console.log("Submitting application data:", applicationData);
+      console.log("Job details:", jobDetails);
+      console.log("Current user:", currentUser);
 
-      toast.success(
-        JOB_APPLICATION_MODAL_CONSTANTS.SUCCESS.SUBMIT_SUCCESS
-      );
-      
+      const response = await submitApplication(applicationData);
+
+      console.log("Application submitted successfully:", response);
+
+      toast.success(JOB_APPLICATION_MODAL_CONSTANTS.SUCCESS.SUBMIT_SUCCESS);
+
       // Fetch updated applications list
-      if (window.location.pathname === '/applications') {
+      if (window.location.pathname === "/applications") {
         window.location.reload(); // Reload to fetch updated applications
       }
-      
+
       onClose();
 
       // Reset form
@@ -195,10 +191,11 @@ const JobApplicationModal = ({ isOpen, onClose, jobDetails }) => {
       console.error("Submission error:", error);
       console.error("Error response:", error.response?.data);
       console.error("Error status:", error.response?.status);
-      
-      const errorMessage = error.response?.data?.message || 
-                          JOB_APPLICATION_MODAL_CONSTANTS.ERRORS.SUBMIT_FAILED;
-      
+
+      const errorMessage =
+        error.response?.data?.message ||
+        JOB_APPLICATION_MODAL_CONSTANTS.ERRORS.SUBMIT_FAILED;
+
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -265,20 +262,26 @@ const JobApplicationModal = ({ isOpen, onClose, jobDetails }) => {
                   <p className={getClasses("JOB_FIELD_LABEL")}>
                     {JOB_APPLICATION_MODAL_CONSTANTS.CONTENT.COMPANY_LABEL}
                   </p>
-                  <p className={getClasses("JOB_FIELD")}>{jobDetails.company}</p>
+                  <p className={getClasses("JOB_FIELD")}>
+                    {jobDetails.company}
+                  </p>
                 </div>
                 <div>
                   <p className={getClasses("JOB_FIELD_LABEL")}>
                     {JOB_APPLICATION_MODAL_CONSTANTS.CONTENT.LOCATION_LABEL}
                   </p>
-                  <p className={getClasses("JOB_FIELD")}>{jobDetails.location}</p>
+                  <p className={getClasses("JOB_FIELD")}>
+                    {jobDetails.location}
+                  </p>
                 </div>
                 {isValidSalaryRange(jobDetails.salary) && (
                   <div>
                     <p className={getClasses("JOB_FIELD_LABEL")}>
                       {JOB_APPLICATION_MODAL_CONSTANTS.CONTENT.SALARY_LABEL}
                     </p>
-                    <p className={getClasses("JOB_FIELD")}>{jobDetails.salary}</p>
+                    <p className={getClasses("JOB_FIELD")}>
+                      {jobDetails.salary}
+                    </p>
                   </div>
                 )}
               </div>
@@ -506,9 +509,7 @@ const JobApplicationModal = ({ isOpen, onClose, jobDetails }) => {
                       {JOB_APPLICATION_MODAL_CONSTANTS.CONTENT.SUBMITTING_TEXT}
                     </div>
                   ) : (
-                    <>
-                      {JOB_APPLICATION_MODAL_CONSTANTS.CONTENT.SUBMIT_BUTTON}
-                    </>
+                    <>{JOB_APPLICATION_MODAL_CONSTANTS.CONTENT.SUBMIT_BUTTON}</>
                   )}
                 </button>
               </div>

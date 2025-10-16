@@ -115,6 +115,7 @@ export const initializeFormData = (user) => {
     company: user?.company || '',
     position: user?.position || '',
     website: user?.website || '',
+    skills: user?.skills || [],
     notifications: {
       email: true,
       push: true,

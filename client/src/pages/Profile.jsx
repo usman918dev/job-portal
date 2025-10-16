@@ -25,6 +25,7 @@ import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import SkillsInput from "../components/SkillsInput";
 
 // Import extracted services, utils, and constants
 import {
@@ -110,12 +111,34 @@ const Profile = () => {
     setFormData(updatedFormData);
   };
 
+  // Handle skills change
+  const handleSkillsChange = (updatedSkills) => {
+    setFormData(prev => ({
+      ...prev,
+      skills: updatedSkills
+    }));
+  };
+
   // Save profile changes
   const handleSaveProfile = async () => {
     setIsLoading(true);
     try {
-      // In a real app, you would make an API call to update the user profile
-      // For now, we'll update the context and localStorage
+      // Prepare update data
+      const updateData = {
+        name: formData.name,
+        phone: formData.phone,
+        location: formData.location,
+        company: formData.company,
+        position: formData.position,
+        website: formData.website,
+        bio: formData.bio,
+        skills: formData.skills
+      };
+
+      // Call API to update profile (if user has _id)
+      if (currentUser?._id) {
+        await updateUserProfile(currentUser._id, updateData);
+      }
 
       const updatedUser = {
         ...currentUser,
@@ -130,7 +153,7 @@ const Profile = () => {
       setIsEditing(false);
       toast.success('Profile updated successfully!');
     } catch (error) {
-      toast.error('Failed to update profile');
+      toast.error(error.message || 'Failed to update profile');
       console.error('Profile update error:', error);
     } finally {
       setIsLoading(false);
@@ -464,6 +487,20 @@ const Profile = () => {
                           </div>
                         </div>
                       </div>
+
+                      {/* Skills Section - Only for users, not admins */}
+                      {currentUser?.role !== 'admin' && currentUser?.role !== 'Admin' && currentUser?.role !== 'Recruiter' && (
+                        <div className="mt-8 pt-8 border-t-2 border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-200 pb-2 mb-6">
+                            Professional Skills
+                          </h3>
+                          <SkillsInput
+                            skills={formData.skills}
+                            onChange={handleSkillsChange}
+                            disabled={!isEditing}
+                          />
+                        </div>
+                      )}
                     </motion.div>
                   )}
 
