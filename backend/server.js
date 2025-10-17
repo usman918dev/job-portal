@@ -3,7 +3,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import cloudinary from 'cloudinary';
+import { initCloudinary } from './config/cloudinary.js';
+import { initRedis, closeRedis } from './config/redis.js';
 import jobRoutes from './routes/jobRoutes.js';
 import authRoutes from './routes/userRoute.js';
 import userRoutes from './routes/adminUserRoute.js';
@@ -13,22 +14,17 @@ import seedRoutes from './routes/seedRoutes.js';
 import auditLogRoutes from './routes/auditLogRoutes.js';
 dotenv.config();
 
-// Configure Cloudinary
-if (process.env.CLOUDINARY_URL) {
-  cloudinary.v2.config({ CLOUDINARY_URL: process.env.CLOUDINARY_URL });
-} else {
-  cloudinary.v2.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
-}
+// Initialize Cloudinary configuration
+initCloudinary();
+
+// Initialize Redis (optional - will work without it)
+initRedis();
 
 const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json()); // JSON body parse karne ke liye
+app.use(express.json()); 
 
 // auth Routes (no audit logging for auth routes)
 app.use('/api/auth', authRoutes);
@@ -64,5 +60,17 @@ mongoose.connect(MONGO_URI)
   console.error('MongoDB connection error:', err);
 });
 
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, closing connections...');
+  await closeRedis();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, closing connections...');
+  await closeRedis();
+  process.exit(0);
+});
 
 export default app;

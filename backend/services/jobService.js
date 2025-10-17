@@ -1,5 +1,14 @@
 import Job from '../models/newJobs.js';
 import mongoose from 'mongoose';
+import {
+  getCache,
+  setCache,
+  invalidateJobsCache,
+  getJobsListCacheKey,
+  getJobCacheKey,
+  JOBS_LIST_TTL,
+  JOB_DETAIL_TTL,
+} from '../utils/cacheUtils.js';
 
 export const createJob = async (jobData, userId) => {
   const {
@@ -64,10 +73,24 @@ export const createJob = async (jobData, userId) => {
   });
 
   const savedJob = await newJob.save();
+  
+  // Invalidate jobs cache when new job is created
+  await invalidateJobsCache();
+  
   return savedJob;
 };
 
 export const getJobs = async (page = 1, limit = 10, searchQuery = '') => {
+  // Try to get from cache first
+  const cacheKey = getJobsListCacheKey({ page, limit, search: searchQuery });
+  const cachedData = await getCache(cacheKey);
+  
+  if (cachedData) {
+    console.log('✅ Serving jobs from cache');
+    return cachedData;
+  }
+  
+  console.log('⚠️  Fetching jobs from database');
   const skip = (page - 1) * limit;
 
   // Build search filter
@@ -97,7 +120,7 @@ export const getJobs = async (page = 1, limit = 10, searchQuery = '') => {
   const totalJobs = await Job.countDocuments(searchFilter);
   const totalPages = Math.ceil(totalJobs / limit);
 
-  return {
+  const result = {
     jobs,
     pagination: {
       currentPage: page,
@@ -107,6 +130,11 @@ export const getJobs = async (page = 1, limit = 10, searchQuery = '') => {
       hasPrevPage: page > 1
     }
   };
+  
+  // Cache the result
+  await setCache(cacheKey, result, JOBS_LIST_TTL);
+  
+  return result;
 };
 
 export const getAdminJobs = async (adminId, page = 1, limit = 10) => {
@@ -155,11 +183,24 @@ export const getAdminJobs = async (adminId, page = 1, limit = 10) => {
 };
 
 export const getJobById = async (jobId) => {
+  // Try to get from cache first
+  const cacheKey = getJobCacheKey(jobId);
+  const cachedJob = await getCache(cacheKey);
+  
+  if (cachedJob) {
+    console.log('✅ Serving job from cache');
+    return cachedJob;
+  }
+  
+  console.log('⚠️  Fetching job from database');
   const job = await Job.findById(jobId);
 
   if (!job) {
     throw new Error('Job not found');
   }
+  
+  // Cache the job
+  await setCache(cacheKey, job, JOB_DETAIL_TTL);
 
   return job;
 };
@@ -239,6 +280,9 @@ export const updateJob = async (jobId, jobData, userId) => {
     },
     { new: true, runValidators: true }
   );
+  
+  // Invalidate caches when job is updated
+  await invalidateJobsCache();
 
   return updatedJob;
 };
@@ -256,5 +300,9 @@ export const deleteJob = async (jobId, userId) => {
   }
 
   const deletedJob = await Job.findByIdAndDelete(jobId);
+  
+  // Invalidate caches when job is deleted
+  await invalidateJobsCache();
+  
   return deletedJob;
 };
