@@ -29,6 +29,16 @@ export const createJob = async (jobData, userId) => {
     throw new Error('Please fill all required fields');
   }
 
+  // Validate description (at least 50 characters)
+  if (!description || description.trim().length < 50) {
+    throw new Error('Description must be at least 50 characters long');
+  }
+
+  // Validate requirements (at least 50 characters)
+  if (!requirements || requirements.trim().length < 50) {
+    throw new Error('Requirements must be at least 50 characters long');
+  }
+
   // Validate salary range if provided
   if (salaryRange && salaryRange.trim()) {
     const salaryParts = salaryRange.split(' - ');
@@ -222,6 +232,26 @@ export const updateJob = async (jobId, jobData, userId) => {
   // Basic validation
   if (!title || !company || !location || !jobType) {
     throw new Error('Please fill all required fields');
+  }
+
+  // Validate description (at least 50 characters)
+  if (!description || description.trim().length < 50) {
+    throw new Error('Description must be at least 50 characters long');
+  }
+
+  // Validate requirements (at least 50 characters)
+  if (!requirements || requirements.trim().length < 50) {
+    throw new Error('Requirements must be at least 50 characters long');
+  }
+
+  // Validate description (at least 50 characters)
+  if (!description || description.trim().length < 50) {
+    throw new Error('Description must be at least 50 characters long');
+  }
+
+  // Validate requirements (at least 50 characters)
+  if (!requirements || requirements.trim().length < 50) {
+    throw new Error('Requirements must be at least 50 characters long');
   }
 
   // Validate salary range if provided

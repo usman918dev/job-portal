@@ -3,9 +3,9 @@ import { getRedisClient, isRedisAvailable } from '../config/redis.js';
 /**
  * Default cache TTL (Time To Live) in seconds
  */
-const DEFAULT_TTL = 300; // 5 minutes
-const JOBS_LIST_TTL = 180; // 3 minutes for job listings
-const JOB_DETAIL_TTL = 600; // 10 minutes for individual job details
+export const DEFAULT_TTL = 300; // 5 minutes
+export const JOBS_LIST_TTL = 180; // 3 minutes for job listings
+export const JOB_DETAIL_TTL = 600; // 10 minutes for individual job details
 
 /**
  * Generate cache key for jobs list
